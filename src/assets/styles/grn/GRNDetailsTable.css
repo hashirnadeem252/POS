@@ -1,0 +1,169 @@
+/* assets/styles/grn/GRNDetailsTable.css */
+@import '../variables.css';
+
+.grn-details-section {
+  margin-top: 8px;
+}
+
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.details-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.details-header h3 svg {
+  color: var(--color-primary);
+}
+
+.void-count-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: rgba(194, 59, 54, 0.1);
+  color: var(--color-danger);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 12px;
+}
+
+/* ========================================
+   TABLE CELLS
+   ======================================== */
+.grn-product-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.2s;
+}
+
+.grn-product-cell.is-void {
+  text-decoration: line-through;
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+}
+
+.void-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--color-danger);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.grn-row-total {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.grn-row-total.is-void {
+  text-decoration: line-through;
+  color: var(--color-text-secondary);
+}
+
+.input-sm {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  text-align: center;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.input-sm:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.12);
+}
+
+.input-sm:disabled {
+  background: var(--color-border-light);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ========================================
+   ACTION BUTTONS
+   ======================================== */
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.btn-icon.void {
+  color: var(--color-danger);
+  border-color: rgba(194, 59, 54, 0.2);
+}
+
+.btn-icon.void:hover {
+  background: var(--color-danger);
+  color: white;
+  border-color: var(--color-danger);
+}
+
+.btn-icon.restore {
+  color: var(--color-success);
+  border-color: rgba(30, 143, 85, 0.2);
+}
+
+.btn-icon.restore:hover {
+  background: var(--color-success);
+  color: white;
+  border-color: var(--color-success);
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+.empty-details {
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--color-background);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+}
+
+.empty-details .empty-hint {
+  font-size: 13px;
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+  .details-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .input-sm {
+    width: 60px;
+    font-size: 12px;
+  }
+}

@@ -1,0 +1,45 @@
+/* assets/styles/common/CodeInput.css */
+@import '../variables.css';
+
+.code-input-group {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.code-input-field {
+  flex: 1;
+}
+
+.code-input-generate-btn {
+  width: 42px;
+  min-width: 42px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  color: var(--color-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+
+.code-input-generate-btn:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.code-input-generate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

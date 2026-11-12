@@ -1,0 +1,495 @@
+/* ==========================================================================
+   POSScreen.responsive.css   (replaces SalesAndReturn.responsive.css)
+
+   LOAD ORDER (last one wins):
+     1. SalesAndReturn.css
+     2. POSScreen.css
+     3. POSBottomActions.css      <- bottom bar (already sent)
+     4. POSScreen.responsive.css  <- this file, LAST
+
+   It forces one layout (CSS grid) so it works no matter which of the first
+   two stylesheets is active, and fixes conflicts between them.
+   Needs in index.html:
+   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+   ========================================================================== */
+
+/* ---------- 1. Base: one container, one layout ---------- */
+
+.pos-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;           /* real visible height on mobile browsers */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 16px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    overflow: hidden;
+}
+
+.loading-fullpage {
+    height: 100%;
+    min-height: 100dvh;
+}
+
+/* Main area is a 2-column grid: [left panel | cart] */
+.pos-three-column {
+    display: grid;
+    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Cancel the percentage widths / margins from SalesAndReturn.css */
+.pos-left,
+.pos-center {
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    max-height: none;
+    border-radius: 12px;
+    min-height: 0;
+}
+
+.pos-center {
+    padding: 0;
+}
+
+.pos-header,
+.pos-header-left,
+.pos-header-center,
+.pos-header-right {
+    min-width: 0;
+}
+
+.pos-header-left h1,
+.pos-header-title {
+    white-space: nowrap;
+}
+
+/* Cart: table scrolls both ways inside its own box */
+.cart-items-container {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.cart-table {
+    min-width: 520px;
+}
+
+.cart-table th,
+.cart-table td {
+    white-space: nowrap;
+}
+
+.cart-table td:nth-child(2) {
+    white-space: normal;
+}
+
+.master-tab,
+.items-grid {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.search-results {
+    max-width: 100%;
+}
+
+.search-with-button {
+    min-width: 0;
+}
+
+/* Totals: 4 columns on desktop */
+.cart-totals {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+/* ---------- 2. Touch devices ---------- */
+
+@media (hover: none) {
+    /* "+" badge was hover-only, so it was invisible on phones */
+    .item-card .item-card-add {
+        opacity: 1;
+        width: 26px;
+        height: 26px;
+    }
+
+    .item-card:hover {
+        transform: none;
+    }
+
+    .item-card:active {
+        transform: scale(0.98);
+        border-color: var(--color-primary, #0D9488);
+    }
+}
+
+@media (pointer: coarse) {
+    .mode-btn,
+    .left-tabs .tab-btn,
+    .return-option-btn,
+    .btn,
+    .page-btn {
+        min-height: 44px;
+    }
+
+    .left-tabs .tab-btn {
+        font-size: 14px;
+    }
+
+    .cart-table .item-controls .qty-btn,
+    .qty-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 18px;
+    }
+
+    .btn-icon,
+    .cart-table .btn-remove {
+        min-width: 38px;
+        min-height: 38px;
+    }
+
+    .btn-clear {
+        width: 28px;
+        height: 28px;
+    }
+
+    .void-btn,
+    .restore-btn {
+        min-height: 36px;
+        padding: 4px 12px;
+    }
+
+    .search-result-item {
+        padding: 12px;
+    }
+
+    .cart-table .input-sm {
+        width: 70px;
+        padding: 8px 6px;
+    }
+
+    /* 16px prevents iOS Safari auto-zoom on focus */
+    input,
+    select,
+    textarea,
+    .input,
+    .search-with-results .input,
+    .items-search .input,
+    .master-date .input,
+    .search-input-wrapper .input,
+    .pos-bottom .bottom-left .input {
+        font-size: 16px;
+    }
+
+    .search-with-results .input,
+    .items-search .input,
+    .master-date .input,
+    .pos-bottom .bottom-left .input {
+        height: 42px;
+    }
+}
+
+/* ---------- 3. Large desktop ---------- */
+@media (min-width: 1600px) {
+    .pos-three-column {
+        grid-template-columns: 380px minmax(0, 1fr);
+    }
+
+    .items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .cart-table,
+    .cart-table tbody td {
+        font-size: 14px;
+    }
+}
+
+/* ---------- 4. Small desktop / tablet landscape ---------- */
+@media (max-width: 1200px) {
+    .pos-three-column {
+        grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+    }
+
+    .cart-table {
+        min-width: 480px;
+    }
+}
+
+/* ---------- 5. Tablet / below 992px: stacked, page-style scroll ---------- */
+@media (max-width: 992px) {
+    .pos-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .pos-header-center {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* The middle area scrolls as a single page: items on top, cart below */
+    .pos-three-column {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto;
+        align-content: start;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .pos-left {
+        max-height: 48dvh;
+    }
+
+    .pos-center {
+        min-height: 340px;
+    }
+
+    .items-tab {
+        overflow: hidden;
+    }
+
+    .items-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .cart-totals {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .return-search-box {
+        max-width: 100%;
+    }
+}
+
+/* ---------- 6. Phone ---------- */
+@media (max-width: 768px) {
+    .pos-fullscreen {
+        padding: 6px;
+        padding-top: max(6px, env(safe-area-inset-top, 0px));
+        padding-left: max(6px, env(safe-area-inset-left, 0px));
+        padding-right: max(6px, env(safe-area-inset-right, 0px));
+        gap: 6px;
+    }
+
+    /* Header: title/invoice row, mode buttons row, actions row */
+    .pos-header {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+    }
+
+    .pos-header-left {
+        flex: 1 1 auto;
+        gap: 8px;
+    }
+
+    .pos-header-left h1,
+    .pos-header-title {
+        font-size: 15px;
+    }
+
+    .invoice-number,
+    .pos-header-left .invoice-number {
+        font-size: 12px;
+        padding: 2px 8px;
+    }
+
+    .pos-header-center {
+        order: 3;
+        width: 100%;
+        gap: 6px;
+    }
+
+    .mode-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+
+    .pos-header-right {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
+    .return-search-section {
+        padding: 10px 12px;
+    }
+
+    .return-search-input {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .return-options {
+        flex-wrap: wrap;
+        padding: 8px 12px;
+    }
+
+    .return-option-btn {
+        flex: 1;
+        text-align: center;
+    }
+
+    /* Panels */
+    .pos-left {
+        max-height: 52dvh;
+    }
+
+    .master-tab {
+        padding: 10px 12px;
+    }
+
+    .items-tab {
+        padding: 8px;
+    }
+
+    .search-with-button {
+        flex-wrap: wrap;
+    }
+
+    .search-with-button .search-with-results {
+        flex: 1 1 100%;
+    }
+
+    .lookup-btn {
+        width: 100%;
+    }
+
+    .items-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .item-card {
+        padding: 10px;
+    }
+
+    /* Cart */
+    .cart-header {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 6px 10px;
+    }
+
+    .cart-table {
+        min-width: 460px;
+        font-size: 12px;
+    }
+
+    .cart-table thead th,
+    .cart-table tbody td {
+        padding: 6px 8px;
+    }
+
+    .cart-footer {
+        padding: 6px 10px;
+    }
+
+    .cart-totals {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 12px;
+    }
+
+    /* Net total gets its own full-width row */
+    .cart-totals .total-row.net-total {
+        grid-column: 1 / -1;
+        font-size: 14px;
+    }
+
+    .cart-totals .total-row.net-total span:last-child {
+        font-size: 18px;
+    }
+}
+
+/* ---------- 7. Small phones ---------- */
+@media (max-width: 480px) {
+    .pos-header-left h1,
+    .pos-header-title {
+        font-size: 14px;
+    }
+
+    .pos-header-right .btn {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    .pos-badge {
+        font-size: 9px;
+        padding: 2px 8px;
+    }
+
+    .item-card .item-card-name {
+        font-size: 12px;
+    }
+
+    .cart-table {
+        min-width: 420px;
+    }
+
+    .stat-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    .exchange-note {
+        font-size: 11px;
+    }
+}
+
+/* ---------- 8. Phone landscape (short screens) ---------- */
+@media (max-height: 480px) and (orientation: landscape) and (max-width: 992px) {
+    /* Side-by-side again: not enough height to stack */
+    .pos-three-column {
+        grid-template-columns: minmax(240px, 40%) minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        overflow: hidden;
+    }
+
+    .pos-left {
+        max-height: none;
+    }
+
+    .pos-center {
+        min-height: 0;
+    }
+
+    .pos-header {
+        padding: 4px 10px;
+    }
+
+    .pos-header-center {
+        order: 0;
+        width: auto;
+    }
+}
+
+/* ---------- 9. Accessibility ---------- */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

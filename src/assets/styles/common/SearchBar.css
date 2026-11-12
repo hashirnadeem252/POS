@@ -1,0 +1,177 @@
+/* ========================================
+   SEARCH DROPDOWN WRAPPER
+   ======================================== */
+.search-dropdown {
+  display: none;
+  padding: 20px;
+  background: var(--color-background);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.search-dropdown.open {
+  display: block;
+  animation: searchSlideDown 0.2s ease;
+}
+
+@keyframes searchSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================
+   FILTERS
+   ======================================== */
+.search-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.filter-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+/* ========================================
+   CUSTOM FILTER CHILDREN
+   ======================================== */
+.filter-children {
+  padding: 16px 0;
+  border-top: 1px dashed var(--color-border-light);
+  border-bottom: 1px dashed var(--color-border-light);
+}
+
+/* ========================================
+   ACTION BUTTONS
+   ======================================== */
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.filter-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.filter-actions .btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.filter-actions .btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.filter-actions .btn-outline {
+  background: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.filter-actions .btn-outline:hover:not(:disabled) {
+  background: var(--color-background);
+  border-color: var(--color-text-secondary);
+}
+
+.filter-actions .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.filter-actions .btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   SPINNER (Loader2)
+   ======================================== */
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+  .search-dropdown {
+    padding: 16px;
+  }
+
+  .filter-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .filter-grid {
+    gap: 12px;
+  }
+
+  .filter-actions {
+    flex-direction: column-reverse;
+  }
+
+  .filter-actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-dropdown {
+    padding: 14px;
+    border-radius: var(--radius-md);
+  }
+}

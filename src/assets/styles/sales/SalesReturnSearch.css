@@ -1,0 +1,249 @@
+/* assets/styles/sales/SalesReturnSearch.css */
+@import '../variables.css';
+
+/* ========================================
+   FULL-SCREEN CONTAINER
+   ======================================== */
+.sales-return-search-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: var(--color-background);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  overflow: hidden;
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================
+   HEADER
+   ======================================== */
+.sales-return-search-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.sales-return-search-header .header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sales-return-search-header .header-left h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.sales-return-search-header .header-left h1 svg {
+  color: var(--color-primary);
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: var(--color-background);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.btn-back:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: translateX(-2px);
+}
+
+.total-count {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  background: var(--color-background);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.sales-return-search-header .header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ========================================
+   CONTENT AREA
+   ======================================== */
+.sales-return-search-content {
+  flex: 1;
+  overflow: auto;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #a82e29;
+}
+
+/* ========================================
+   RESULTS COUNT
+   ======================================== */
+.results-count {
+  display: block;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.filter-info {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* ========================================
+   FORM OVERLAY (for Add Return modal)
+   ======================================== */
+.form-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.form-container {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* ========================================
+   SCROLLBAR
+   ======================================== */
+.sales-return-search-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sales-return-search-content::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+.sales-return-search-content::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+.sales-return-search-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+  .sales-return-search-fullscreen {
+    padding: 10px;
+  }
+
+  .sales-return-search-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 16px;
+  }
+
+  .sales-return-search-header .header-left {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sales-return-search-content {
+    padding: 12px;
+  }
+
+  .form-container {
+    padding: 16px;
+    margin: 10px;
+  }
+}

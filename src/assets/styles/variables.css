@@ -1,0 +1,60 @@
+:root {
+  /* Ink & neutrals */
+  --color-ink: #12203A;
+  --color-ink-soft: #56607A;
+  --color-background: #F3F5F8;
+  --color-surface: #FFFFFF;
+
+  /* Text */
+  --color-text-primary: #12203A;
+  --color-text-secondary: #6B7686;
+  --color-text-light: #FFFFFF;
+
+  /* Sidebar */
+  --color-sidebar: #0F1B30;
+  --color-sidebar-text: #FFFFFF;
+  --color-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --color-sidebar-active-bg: rgba(30, 143, 133, 0.16);
+  --color-sidebar-active-text: #FFFFFF;
+
+  /* ========================================
+     PRIMARY COLOR - TEAL/EMERALD THEME
+     ======================================== */
+  --color-primary: #0D9488;      /* Teal 600 */
+  --color-primary-dark: #0F766E; /* Teal 700 */
+  --color-primary-light: #14B8A6; /* Teal 500 */
+  --color-primary-soft: #E6F7F5; /* Teal 50 */
+  
+  /* Accent - Complementary */
+  --color-accent: #0D9488;
+  --color-accent-soft: #E6F7F5;
+  --color-accent-dark: #0F766E;
+
+  /* Secondary - Warm tone for contrast */
+  --color-secondary: #8B5CF6;    /* Purple 500 */
+  --color-secondary-dark: #7C3AED; /* Purple 600 */
+  --color-secondary-soft: #EDE9FE; /* Purple 50 */
+
+  /* Status */
+  --color-success: #059669;      /* Emerald 600 */
+  --color-warning: #D97706;      /* Amber 600 */
+  --color-danger: #DC2626;       /* Red 600 */
+  --color-info: #0D9488;         /* Teal 600 */
+
+  /* Borders */
+  --color-border: #DEE3EA;
+  --color-border-light: #EAEDF2;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(18, 32, 58, 0.06);
+  --shadow-md: 0 6px 16px rgba(18, 32, 58, 0.08);
+  --shadow-lg: 0 16px 32px rgba(18, 32, 58, 0.12);
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Motion */
+  --transition: all 0.18s ease;
+}

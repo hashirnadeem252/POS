@@ -1,0 +1,45 @@
+/* src/assets/styles/salespersons/SalesPersonDefinition.css */
+@import '../common/Table.css';
+@import '../variables.css';
+
+/* ========================================
+   SALES PERSON DEFINITION CONTAINER
+   ======================================== */
+.salesperson-definition {
+  /* height: 100%; ← removed to avoid clipping negative margins */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ========================================
+   TAB CONTENT
+   ======================================== */
+.salesperson-definition .tab-content {
+  padding: 16px 24px 24px;
+}
+
+/* ========================================
+   RESULTS COUNT
+   ======================================== */
+.results-count {
+  display: block;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 4px 0;
+}
+
+.filter-info {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+  .salesperson-definition .tab-content {
+    padding: 12px 16px 16px;
+  }
+}           

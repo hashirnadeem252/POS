@@ -1,0 +1,49 @@
+/* src/assets/styles/products/ProductDefinition.css */
+@import '../common/Table.css';
+@import '../variables.css';
+
+/* ========================================
+   PRODUCT DEFINITION CONTAINER
+   ======================================== */
+
+/* Remove content-area padding for this page so tabs sit flush with header */
+.product-definition {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: -24px -28px;   /* ← Negate parent .content-area padding */
+  padding: 0;
+}
+
+/* Ensure tab content has its own padding */
+.product-definition .tab-content {
+  padding: 20px 28px 24px;
+}
+
+/* Results count */
+.results-count {
+  display: block;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 4px 0;
+}
+
+.filter-info {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+  .product-definition {
+    margin: -16px;   /* Match mobile content-area padding */
+  }
+
+  .product-definition .tab-content {
+    padding: 16px;
+  }
+}

@@ -1,0 +1,345 @@
+/* components/common/NotificationDropdown.css */
+@import '../variables.css';
+
+.notification-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+/* ========================================
+   NOTIFICATION BUTTON
+   ======================================== */
+.notification-btn {
+  position: relative;
+  background: none;
+  border: 1px solid transparent;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.notification-btn:hover {
+  background: var(--color-background);
+  border-color: var(--color-border-light);
+  color: var(--color-text-primary);
+}
+
+.notification-btn.has-notification {
+  color: var(--color-primary);
+}
+
+.notification-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: var(--color-danger);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* ========================================
+   DROPDOWN MENU
+   ======================================== */
+.notification-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 360px; /* Adjusted for better fit */
+  max-height: 520px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: slideDown 0.2s ease;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ========================================
+   HEADER
+   ======================================== */
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-background);
+  flex-shrink: 0;
+}
+
+.notification-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notification-title svg {
+  color: var(--color-primary);
+}
+
+.notification-refresh {
+  background: none;
+  border: none;
+  padding: 6px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-refresh:hover:not(:disabled) {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.notification-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========================================
+   BODY
+   ======================================== */
+.notification-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-body::-webkit-scrollbar { width: 6px; }
+.notification-body::-webkit-scrollbar-track { background: transparent; }
+.notification-body::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 10px; }
+
+/* ========================================
+   NEW: SALES SUMMARY BANNER
+   ======================================== */
+.sales-summary-banner {
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.08) 0%, rgba(13, 148, 136, 0.02) 100%);
+  border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sales-summary-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sales-summary-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+/* ========================================
+   NEW: ALERT SECTIONS (Held / Udhaar)
+   ======================================== */
+.alert-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alert-section:last-child {
+  border-bottom: none;
+}
+
+.alert-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alert-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alert-section-title.warning { color: var(--color-warning); }
+.alert-section-title.danger { color: var(--color-danger); }
+
+.alert-section-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-background);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.alert-action-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: var(--transition);
+}
+
+.alert-action-btn:hover {
+  background: var(--color-background);
+  border-color: var(--color-text-secondary);
+}
+
+/* ========================================
+   NOTIFICATION LIST (Low Stock)
+   ======================================== */
+.notification-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notification-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--color-border-light);
+}
+
+.notification-list li:last-child {
+  border-bottom: none;
+}
+
+.notification-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.item-code {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.notification-item-stock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.stock-value {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.stock-value.danger { color: var(--color-danger); }
+.stock-value.warning { color: var(--color-warning); }
+
+.stock-min {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* ========================================
+   LOADING & EMPTY STATES
+   ======================================== */
+.notification-loading {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.notification-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.empty-icon {
+  color: var(--color-success);
+  margin-bottom: 12px;
+}
+
+.notification-empty p {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 480px) {
+  .notification-dropdown-menu {
+    width: 320px;
+    right: -50px;
+  }
+}

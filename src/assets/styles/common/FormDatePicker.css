@@ -1,0 +1,470 @@
+/* assets/styles/common/FormDatePicker.css */
+@import '../variables.css';
+
+/* ========================================
+   TRIGGER
+   ======================================== */
+.custom-datepicker-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  min-height: 42px;
+  user-select: none;
+}
+
+.custom-datepicker-trigger:hover:not(.disabled) {
+  border-color: var(--color-text-secondary);
+}
+
+.custom-datepicker-trigger:focus,
+.custom-datepicker-trigger.open {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+}
+
+.custom-datepicker-trigger.disabled {
+  background: var(--color-border-light);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.custom-datepicker-trigger.has-error {
+  border-color: var(--color-danger);
+}
+
+.datepicker-icon {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.datepicker-value {
+  flex: 1;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.datepicker-value.placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+}
+
+.datepicker-clear {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-border-light);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.datepicker-clear:hover {
+  background: var(--color-danger);
+  color: white;
+}
+
+/* ========================================
+   POPOVER
+   ======================================== */
+.dp-popover {
+  width: 320px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: 16px;
+  box-shadow:
+    0 20px 50px rgba(18, 32, 58, 0.18),
+    0 0 0 1px rgba(13, 148, 136, 0.06);
+  overflow: hidden;
+  animation: dpSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+@keyframes dpSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dp-popover.open-up {
+  animation: dpSlideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dpSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ========================================
+   GRADIENT HEADER — signature element
+   ======================================== */
+.dp-gradient-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 18px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.18), transparent 60%),
+    linear-gradient(135deg, #0D9488 0%, #0F766E 60%, #115E59 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative glowing orb */
+.dp-gradient-header::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.5), transparent 70%);
+  pointer-events: none;
+}
+
+/* Decorative small dots pattern */
+.dp-gradient-header::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  left: 10px;
+  width: 60px;
+  height: 6px;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.35) 1px, transparent 1.5px);
+  background-size: 8px 6px;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.dp-nav-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  backdrop-filter: blur(4px);
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.dp-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.dp-nav-btn:active {
+  transform: scale(0.95);
+}
+
+.dp-header-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 1;
+  position: relative;
+}
+
+.dp-header-month {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: white;
+}
+
+.dp-header-year {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  font-family: inherit;
+  appearance: none;
+  padding-right: 18px;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  background-size: 10px;
+  transition: background-color 0.15s ease;
+}
+
+.dp-header-year:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+.dp-header-year option {
+  color: #12203A;
+  background: white;
+}
+
+/* ========================================
+   WEEKDAYS
+   ======================================== */
+.dp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  padding: 12px 16px 6px;
+  background: linear-gradient(180deg, rgba(13, 148, 136, 0.04), transparent);
+}
+
+.dp-weekday {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 0;
+}
+
+/* ========================================
+   GRID + SLIDE ANIMATION
+   ======================================== */
+.dp-grid-wrapper {
+  padding: 4px 16px 8px;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+
+.dp-grid-wrapper.slide-left {
+  animation: dpSlideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dp-grid-wrapper.slide-right {
+  animation: dpSlideRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dpSlideLeft {
+  0% { transform: translateX(12px); opacity: 0.4; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes dpSlideRight {
+  0% { transform: translateX(-12px); opacity: 0.4; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+.dp-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dp-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+/* ========================================
+   DAYS
+   ======================================== */
+.dp-day {
+  position: relative;
+  aspect-ratio: 1;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-weight: 500;
+  padding: 0;
+}
+
+.dp-day:hover:not(.disabled):not(.selected) {
+  background: rgba(13, 148, 136, 0.08);
+  color: var(--color-primary);
+  transform: scale(1.08);
+}
+
+.dp-day:active:not(.disabled):not(.selected) {
+  transform: scale(0.96);
+}
+
+/* Today — signature ring */
+.dp-day.today:not(.selected) {
+  font-weight: 700;
+  color: var(--color-primary);
+  box-shadow: inset 0 0 0 2px rgba(13, 148, 136, 0.35);
+}
+
+.dp-day.today:not(.selected)::after {
+  content: "";
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+/* Selected — gradient + glow */
+.dp-day.selected {
+  background: linear-gradient(135deg, #14B8A6 0%, #0D9488 100%);
+  color: white;
+  font-weight: 700;
+  box-shadow:
+    0 4px 12px rgba(13, 148, 136, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  transform: scale(1.02);
+}
+
+.dp-day.selected:hover {
+  transform: scale(1.08);
+}
+
+/* Outside month */
+.dp-day.outside {
+  color: var(--color-text-secondary);
+  opacity: 0.35;
+}
+
+.dp-day.outside:hover:not(.disabled) {
+  opacity: 0.6;
+}
+
+/* Disabled */
+.dp-day.disabled {
+  color: var(--color-text-secondary);
+  opacity: 0.28;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  text-decoration-color: rgba(107, 118, 134, 0.5);
+}
+
+/* Marked day (dot indicator) */
+.dp-day.marked:not(.selected) .dp-day-dot {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-accent, #0D9488);
+}
+
+.dp-day.selected .dp-day-dot {
+  background: white;
+}
+
+.dp-day-number {
+  z-index: 1;
+}
+
+/* ========================================
+   SHORTCUT CHIPS
+   ======================================== */
+.dp-shortcuts {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px 14px;
+  background: linear-gradient(0deg, rgba(13, 148, 136, 0.04), transparent);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.dp-shortcut-chip {
+  flex: 1;
+  padding: 7px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.dp-shortcut-chip:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(13, 148, 136, 0.25);
+}
+
+.dp-shortcut-chip:active {
+  transform: translateY(0);
+}
+
+.dp-shortcut-chip.dp-shortcut-clear:hover {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  box-shadow: 0 4px 10px rgba(194, 59, 54, 0.25);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 480px) {
+  .dp-popover {
+    width: 300px;
+  }
+
+  .dp-day {
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  .dp-weekday {
+    font-size: 9px;
+  }
+
+  .dp-shortcut-chip {
+    font-size: 10px;
+    padding: 6px 4px;
+  }
+
+  .dp-gradient-header {
+    padding: 14px;
+  }
+}

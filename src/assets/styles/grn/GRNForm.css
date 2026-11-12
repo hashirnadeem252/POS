@@ -1,0 +1,451 @@
+/* assets/styles/grn/GRNForm.css */
+@import '../variables.css';
+
+/* ========================================
+   CONTAINER
+   ======================================== */
+.grn-form-container {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.form-loading {
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+/* ========================================
+   HEADER
+   ======================================== */
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.form-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.form-header h2 svg {
+  color: var(--color-primary);
+}
+
+.form-header-hint {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+  background: rgba(13, 148, 136, 0.08);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+/* ========================================
+   FORM LAYOUT
+   ======================================== */
+.grn-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.form-row.two-col {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* ========================================
+   MASTER SECTION
+   ======================================== */
+.grn-master-section {
+  background: var(--color-background);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+
+.grn-master-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 16px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.grn-master-section h3 svg {
+  color: var(--color-primary);
+}
+
+/* ========================================
+   ENTRY MODE SECTION
+   ======================================== */
+.grn-entry-section {
+  background: var(--color-background);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+
+.grn-entry-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 16px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.grn-entry-section h3 svg {
+  color: var(--color-primary);
+}
+
+.entry-mode-tabs {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+  margin-bottom: 16px;
+}
+
+.entry-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.entry-mode-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.entry-mode-btn.active {
+  background: var(--color-primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ========================================
+   PICKER SECTION
+   ======================================== */
+.grn-picker-section {
+  padding: 4px 0;
+}
+
+.mode-description {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0 0 12px 0;
+}
+
+.product-search-row {
+  display: flex;
+  gap: 10px;
+}
+
+.search-input-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+}
+
+.search-input-wrapper:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+}
+
+.search-input-wrapper svg {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.search-input-wrapper .input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  font-family: inherit;
+}
+
+/* ========================================
+   QUICK RESULTS
+   ======================================== */
+.quick-results {
+  margin-top: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.quick-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border-light);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.quick-result-item:last-child {
+  border-bottom: none;
+}
+
+.quick-result-item:hover {
+  background: var(--color-background);
+}
+
+.result-code {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.result-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.result-price {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.btn-add-small {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-primary);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quick-result-more {
+  padding: 10px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-background);
+}
+
+/* ========================================
+   NO SUPPLIER STATE
+   ======================================== */
+.grn-no-supplier {
+  text-align: center;
+  padding: 40px 20px;
+  background: var(--color-background);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+/* ========================================
+   PURCHASE PICKER
+   ======================================== */
+.no-purchases-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 30px 20px;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.no-purchases-message svg {
+  color: var(--color-border);
+}
+
+.purchase-info {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
+.purchase-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+}
+
+.purchase-info-grid div {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.purchase-info-grid div strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+/* ========================================
+   COMMENTS
+   ======================================== */
+.grn-comments-section {
+  margin-top: 4px;
+}
+
+/* ========================================
+   FORM ACTIONS
+   ======================================== */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.form-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid transparent;
+  font-family: inherit;
+}
+
+.form-actions .btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.form-actions .btn-primary:hover {
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.form-actions .btn-outline {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.form-actions .btn-outline:hover {
+  background: var(--color-background);
+  border-color: var(--color-text-secondary);
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 992px) {
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .grn-form-container {
+    padding: 16px;
+    margin: 0 8px;
+  }
+
+  .form-row,
+  .form-row.two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .form-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .entry-mode-tabs {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .product-search-row {
+    flex-direction: column;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,170 @@
+/* components/common/SearchToolbar.css */
+@import '../variables.css';
+
+/* ========================================
+   TOOLBAR
+   ======================================== */
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 4px 0;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ========================================
+   TOOLBAR BUTTONS
+   ======================================== */
+.toolbar-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition);
+  font-weight: 500;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  background: var(--color-background);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar-btn svg {
+  flex-shrink: 0;
+}
+
+/* ========================================
+   FILTER BUTTON
+   ======================================== */
+.btn-filter {
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.btn-filter:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-filter.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.btn-filter.active:hover {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  color: white;
+}
+
+.btn-filter .filter-badge {
+  background: var(--color-primary);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 50%;
+  margin-left: 4px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.btn-filter.active .filter-badge {
+  background: white;
+  color: var(--color-primary);
+}
+
+/* ========================================
+   PRINT BUTTON
+   ======================================== */
+.btn-print {
+  background: var(--color-secondary, #1E8F85);
+  color: white;
+  border-color: var(--color-secondary, #1E8F85);
+}
+
+.btn-print:hover {
+  background: var(--color-secondary-dark, #006666);
+  border-color: var(--color-secondary-dark, #006666);
+  color: white;
+}
+
+/* ========================================
+   CSV EXPORT BUTTON
+   ======================================== */
+.btn-csv {
+  background: var(--color-success, #1E8F55);
+  color: white;
+  border-color: var(--color-success, #1E8F55);
+}
+
+.btn-csv:hover {
+  background: #218838;
+  border-color: #218838;
+  color: white;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  
+  .toolbar-left,
+  .toolbar-right {
+    justify-content: center;
+  }
+
+  .toolbar-btn {
+    flex: 1;
+    justify-content: center;
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbar-btn {
+    font-size: 12px;
+    padding: 4px 10px;
+    min-height: 30px;
+  }
+  
+  .toolbar-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+}
