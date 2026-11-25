@@ -1,7 +1,7 @@
 // components/common/ProtectedRoute.jsx
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/auth/useAuth";
-import LoadingSpinner from "./LoadingSpinner";
+import DataLoader from "./DataLoader";
 
 export default function ProtectedRoute() {
   const { isAuthenticated, loading } = useAuth();
@@ -9,18 +9,7 @@ export default function ProtectedRoute() {
 
   // Wait for session restore to finish
   if (loading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-        }}
-      >
-        <LoadingSpinner fullPage message="Checking session..." size="large" />
-      </div>
-    );
+    return <DataLoader fullPage message="Checking session..." size="large" />;
   }
 
   // Not logged in → redirect to /login, remember where they were going

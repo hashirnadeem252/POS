@@ -5,12 +5,7 @@
    CONTAINER
    ======================================== */
 .grn-form-container {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  box-shadow: var(--shadow-sm);
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .form-loading {
@@ -64,13 +59,13 @@
   gap: 20px;
 }
 
-.form-row {
+.grn-form .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 16px;
 }
 
-.form-row.two-col {
+.grn-form .form-row.two-col {
   grid-template-columns: 1fr 1fr;
 }
 
@@ -408,19 +403,14 @@
    RESPONSIVE
    ======================================== */
 @media (max-width: 992px) {
-  .form-row {
+  .grn-form .form-row {
     grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 768px) {
-  .grn-form-container {
-    padding: 16px;
-    margin: 0 8px;
-  }
-
-  .form-row,
-  .form-row.two-col {
+  .grn-form .form-row,
+  .grn-form .form-row.two-col {
     grid-template-columns: 1fr;
   }
 

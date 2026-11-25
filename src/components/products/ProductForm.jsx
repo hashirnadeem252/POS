@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Save, X, Hash, Barcode as BarcodeIcon } from "lucide-react";
 import { getNextProductCode, saveProductCode } from "../../services/indexdb/sequenceService";
+import { requireCurrentAuthTenantId } from "../../utils/authTenant"; // ✅ Added
 import { notify } from "../../utils/notify";
 import FormInput from "../common/FormInput";
 import FormSelect from "../common/FormSelect";
@@ -25,6 +26,7 @@ function ProductForm({ product, categories, brands, units, onClose, onSave }) {
     retailPrice: "",
     taxPercentage: "",
     minimumStock: "",
+    openingStock: "",
     imageURL: "",
   });
 
@@ -50,6 +52,7 @@ function ProductForm({ product, categories, brands, units, onClose, onSave }) {
         retailPrice: product.retailPrice || "",
         taxPercentage: product.taxPercentage || "",
         minimumStock: product.minimumStock || "",
+        openingStock: "",
         imageURL: product.imageURL || "",
       });
       setIsCodeGenerated(true);
@@ -94,6 +97,7 @@ function ProductForm({ product, categories, brands, units, onClose, onSave }) {
       retailPrice: "",
       taxPercentage: "",
       minimumStock: "",
+      openingStock: "",
       imageURL: "",
     });
     setIsCodeManuallyEdited(false);
@@ -143,7 +147,8 @@ function ProductForm({ product, categories, brands, units, onClose, onSave }) {
 
     setIsGenerating(true);
     try {
-      const code = await getNextProductCode(categoryName);
+      const tenantId = requireCurrentAuthTenantId(); // ✅ Get TenantId
+      const code = await getNextProductCode(categoryName, tenantId); // ✅ Pass it
       setFormData((prev) => ({ ...prev, code }));
       setLastGeneratedCode(code);
       setIsCodeGenerated(true);
@@ -234,14 +239,24 @@ function ProductForm({ product, categories, brands, units, onClose, onSave }) {
 
     if (!product) {
       try {
+        const tenantId = requireCurrentAuthTenantId(); // ✅ Get TenantId
         const categoryName = getCategoryName(formData.categoryId);
-        const savedCode = await saveProductCode(categoryName);
+        const savedCode = await saveProductCode(categoryName, tenantId); // ✅ Pass it
         finalCode = savedCode;
         setFormData((prev) => ({ ...prev, code: savedCode }));
       } catch (error) {
         console.error("Error incrementing sequence:", error);
       }
     }
+const openingStock = Number(formData.openingStock) || 0;
+if (openingStock < 0) {
+  notify.warning("Opening stock cannot be negative");
+  return;
+}
+if (openingStock > 0 && !formData.costPrice) {
+  notify.warning("Cost Price is required when adding opening stock");
+  return;
+}
 
     const cleanedData = {
       code: finalCode,
@@ -260,6 +275,7 @@ function ProductForm({ product, categories, brands, units, onClose, onSave }) {
         ? Number(formData.minimumStock)
         : 0,
       currentStock: 0,
+      openingStock: isEditing ? 0 : openingStock,
       imageURL: formData.imageURL ? formData.imageURL.trim() : null,
       isActive: true,
     };
@@ -300,7 +316,7 @@ function ProductForm({ product, categories, brands, units, onClose, onSave }) {
   // RENDER
   // =========================
   return (
-    <div className="product-form-container">
+    <div className="product-form-container form-page">
       <div className="form-header">
         <h2>
           <Hash size={20} strokeWidth={2} />
@@ -439,6 +455,7 @@ function ProductForm({ product, categories, brands, units, onClose, onSave }) {
             placeholder="0"
             step="0.01"
             helper="Optional tax percentage"
+            info="This percentage is applied to the product price when calculating sale totals."
           />
         </div>
 
@@ -453,8 +470,20 @@ function ProductForm({ product, categories, brands, units, onClose, onSave }) {
             placeholder="0"
             step="1"
             helper="Low stock alert threshold"
+            info="The product is flagged as low stock when its available quantity reaches this level."
           />
-
+{!isEditing && (
+  <FormInput
+    label="Opening Stock"
+    name="openingStock"
+    type="number"
+    value={formData.openingStock}
+    onChange={handleChange}
+    placeholder="0"
+    step="any"
+    helper="Quantity currently on your shelf"
+  />
+)}
           <FormInput
             label="Image URL"
             name="imageURL"

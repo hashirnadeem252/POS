@@ -2,13 +2,14 @@
   import { useState, useEffect } from "react";
   import { Save, X, User } from "lucide-react";
   import { getNextCustomerCode, saveCustomerCode } from "../../services/indexdb/sequenceService";
+  import { requireCurrentAuthTenantId } from "../../utils/authTenant"; 
   import { notify } from "../../utils/notify";
   import FormInput from "../common/FormInput";
   import FormTextarea from "../common/FormTextarea";
   import CodeInput from "../common/CodeInput";
   import "../../assets/styles/customers/CustomerForm.css";
 
-  function CustomerForm({ customer, onClose, onSave }) {
+function CustomerForm({ customer, onClose, onSave }) {
     // =========================
     // STATE
     // =========================
@@ -27,24 +28,25 @@
     const [isGenerating, setIsGenerating] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    // =========================
-    // GENERATE CUSTOMER CODE
-    // =========================
-    const generateCustomerCode = async () => {
-      setIsGenerating(true);
-      try {
-        const code = await getNextCustomerCode();
-        setFormData((prev) => ({ ...prev, code }));
-      } catch (error) {
-        console.error("Error generating customer code:", error);
-        const year = new Date().getFullYear().toString().slice(-2);
-        const random = Math.floor(1000 + Math.random() * 9000);
-        const fallbackCode = `CUS-${year}-${random}`;
-        setFormData((prev) => ({ ...prev, code: fallbackCode }));
-      } finally {
-        setIsGenerating(false);
-      }
-    };
+  // =========================
+  // GENERATE CUSTOMER CODE
+  // =========================
+  const generateCustomerCode = async () => {
+    setIsGenerating(true);
+    try {
+      const tenantId = requireCurrentAuthTenantId(); // ✅ Get tenantId
+      const code = await getNextCustomerCode(tenantId); // ✅ Pass it
+      setFormData((prev) => ({ ...prev, code }));
+    } catch (error) {
+      console.error("Error generating customer code:", error);
+      const year = new Date().getFullYear().toString().slice(-2);
+      const random = Math.floor(1000 + Math.random() * 9000);
+      const fallbackCode = `CUS-${year}-${random}`;
+      setFormData((prev) => ({ ...prev, code: fallbackCode }));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
     // =========================
     // LOAD CUSTOMER DATA OR GENERATE CODE
@@ -106,14 +108,14 @@
         return;
       }
 
-      if (!customer) {
-        try {
-          await saveCustomerCode();
-        } catch (error) {
-          console.error("Error saving customer code sequence:", error);
-        }
+         if (!customer) {
+      try {
+        const tenantId = requireCurrentAuthTenantId(); // ✅ Get tenantId
+        await saveCustomerCode(tenantId); // ✅ Pass it
+      } catch (error) {
+        console.error("Error saving customer code sequence:", error);
       }
-
+    }
       const cleanedData = {
         code: formData.code.trim(),
         name: formData.name.trim(),
@@ -136,7 +138,7 @@
     // =========================
     if (isLoading) {
       return (
-        <div className="customer-form-container">
+        <div className="customer-form-container form-page">
           <div className="form-loading">Loading customer...</div>
         </div>
       );
@@ -146,7 +148,7 @@
     // RENDER
     // =========================
     return (
-      <div className="customer-form-container">
+      <div className="customer-form-container form-page">
         {/* Header */}
         <div className="form-header">
           <h2>

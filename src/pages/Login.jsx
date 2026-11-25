@@ -8,8 +8,10 @@ import AuthInput from "../components/auth/AuthInput";
 import PasswordInput from "../components/auth/PasswordInput";
 import AuthButton from "../components/auth/AuthButton";
 import { notify } from "../utils/notify";
+import { useTranslation } from "react-i18next";
 
 export default function Login() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
@@ -20,7 +22,9 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      const dest = location.state?.from?.pathname || "/dashboard";
+      const dest = location.state?.accountSwitch
+        ? "/dashboard"
+        : location.state?.from?.pathname || "/dashboard";
       navigate(dest, { replace: true });
     }
   }, [isAuthenticated, navigate, location.state]);
@@ -35,8 +39,8 @@ export default function Login() {
 
   const validate = () => {
     const errs = {};
-    if (!form.username.trim()) errs.username = "Username is required";
-    if (!form.password) errs.password = "Password is required";
+    if (!form.username.trim()) errs.username = t("auth.usernameRequired");
+    if (!form.password) errs.password = t("auth.passwordRequired");
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -52,8 +56,10 @@ export default function Login() {
         password: form.password,
       });
 
-      notify.success("Welcome back!");
-      const dest = location.state?.from?.pathname || "/dashboard";
+      notify.success(t("auth.welcomeToast"));
+      const dest = location.state?.accountSwitch
+        ? "/dashboard"
+        : location.state?.from?.pathname || "/dashboard";
       navigate(dest, { replace: true });
     } catch (error) {
       console.error("Login failed:", error);
@@ -64,7 +70,7 @@ export default function Login() {
         msg.toLowerCase().includes("invalid") ||
         msg.toLowerCase().includes("password")
       ) {
-        setErrors({ password: "Invalid username or password" });
+        setErrors({ password: t("auth.invalidCredentials") });
       }
     } finally {
       setLoading(false);
@@ -73,16 +79,16 @@ export default function Login() {
 
   return (
     <AuthLayout
-      title="Welcome back"
-      subtitle="Sign in to continue to your POS dashboard"
+      title={t("auth.welcomeBack")}
+      subtitle={t("auth.signInSubtitle")}
     >
       <form onSubmit={handleSubmit} className="auth-form" noValidate>
         <AuthInput
-          label="Username"
+          label={t("auth.username")}
           name="username"
           value={form.username}
           onChange={handleChange}
-          placeholder="Enter your username"
+          placeholder={t("auth.usernamePlaceholder")}
           icon={User}
           error={errors.username}
           autoFocus
@@ -91,11 +97,11 @@ export default function Login() {
         />
 
         <PasswordInput
-          label="Password"
+          label={t("auth.password")}
           name="password"
           value={form.password}
           onChange={handleChange}
-          placeholder="Enter your password"
+          placeholder={t("auth.passwordPlaceholder")}
           error={errors.password}
           autoComplete="current-password"
           required
@@ -112,19 +118,19 @@ export default function Login() {
               textDecoration: "none",
             }}
           >
-            Forgot password?
+            {t("auth.forgotPassword")}
           </Link>
         </div>
 
         <AuthButton loading={loading}>
-          Sign In
+          {t("auth.signIn")}
           <ArrowRight size={16} strokeWidth={2.5} />
         </AuthButton>
 
         <div className="auth-form-footer">
-          <span>Don't have an account?</span>
+          <span>{t("auth.noAccount")}</span>
           <Link to="/signup" className="auth-link">
-            Create one
+            {t("auth.createAccount")}
           </Link>
         </div>
       </form>

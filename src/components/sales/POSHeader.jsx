@@ -3,32 +3,25 @@ import {
   ShoppingCart,
   RotateCcw,
   Pencil,
-  RefreshCw,
   Search,
   ClipboardList,
   X,
 } from "lucide-react";
-import { notify } from "../../utils/notify";
+import MasterDataSyncStatus from "../common/MasterDataSyncStatus";
+import LowStockAlert from "../common/LowStockAlert";
+import { useTranslation } from "react-i18next";
 
 function POSHeader({
   mode,
   isEditing,
   saleData,
-  resetAll,
-  setMode,
-  refreshProducts,
+  products,
+  onSelectMode,
   onSearchSales,
   onViewReturns,
   exitPOS,
 }) {
-  const handleRefresh = async () => {
-    try {
-      await refreshProducts();
-      notify.success("Products refreshed");
-    } catch {
-      notify.error("Failed to refresh products");
-    }
-  };
+  const { t } = useTranslation();
 
   return (
     <div className="pos-header">
@@ -37,78 +30,86 @@ function POSHeader({
           {mode === "return" ? (
             <>
               <RotateCcw size={20} strokeWidth={2} />
-              Return / Exchange
+              {t("pos.returnExchange")}
             </>
           ) : isEditing ? (
             <>
               <Pencil size={20} strokeWidth={2} />
-              Edit Sale
+              {t("pos.editSale")}
             </>
           ) : (
             <>
               <ShoppingCart size={20} strokeWidth={2} />
-              Sale
+              {t("pos.sale")}
             </>
           )}
         </h1>
 
-        <span className="invoice-number">#{saleData.invoiceNumber}</span>
+        {saleData.invoiceNumber && (
+          <span className="invoice-number">#{saleData.invoiceNumber}</span>
+        )}
 
         {mode === "return" && (
           <span className="pos-badge return-badge">
             <RotateCcw size={12} strokeWidth={2.5} />
-            RETURN / EXCHANGE MODE
+            {t("pos.returnMode")}
           </span>
         )}
 
         {isEditing && mode === "sale" && (
           <span className="pos-badge edit-badge">
             <Pencil size={12} strokeWidth={2.5} />
-            EDITING
+            {t("pos.editing")}
           </span>
         )}
       </div>
 
       <div className="pos-header-center">
         <button
-          className={`mode-btn ${mode === "sale" && !isEditing ? "active" : ""}`}
-          onClick={resetAll}
+          type="button"
+          className={`mode-btn sale-mode ${
+            mode === "sale" ? "active" : ""
+          }`}
+          onClick={() => onSelectMode("sale")}
+          aria-pressed={mode === "sale"}
         >
           <ShoppingCart size={15} strokeWidth={2} />
-          Sale
+          {t("pos.saleMode")}
         </button>
         <button
-          className={`mode-btn ${mode === "return" ? "active" : ""}`}
-          onClick={() => setMode("return")}
+          type="button"
+          className={`mode-btn return-mode ${
+            mode === "return" ? "active" : ""
+          }`}
+          onClick={() => onSelectMode("return")}
+          aria-pressed={mode === "return"}
         >
           <RotateCcw size={15} strokeWidth={2} />
-          Return / Exchange
+          {t("pos.returnExchange")}
         </button>
       </div>
 
       <div className="pos-header-right">
-        <button className="btn btn-outline btn-sm" onClick={handleRefresh}>
-          <RefreshCw size={14} strokeWidth={2} />
-          Refresh
-        </button>
+        <LowStockAlert products={products} />
+        <MasterDataSyncStatus />
 
         {mode === "sale" && (
           <button className="btn btn-outline btn-sm" onClick={onSearchSales}>
             <Search size={14} strokeWidth={2} />
-            Search Sales
+            {t("pos.searchSales")}
           </button>
         )}
 
         {mode === "return" && (
           <button className="btn btn-outline btn-sm" onClick={onViewReturns}>
             <ClipboardList size={14} strokeWidth={2} />
-            View Returns
+            {t("pos.viewReturns")}
           </button>
         )}
 
         <button className="btn btn-danger btn-sm" onClick={exitPOS}>
           <X size={14} strokeWidth={2} />
-          Exit
+          {t("pos.exit")}
         </button>
       </div>
     </div>

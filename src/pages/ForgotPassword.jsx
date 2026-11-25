@@ -5,10 +5,12 @@ import { Mail, ArrowRight, CheckCircle2 } from "lucide-react";
 import AuthLayout from "../components/auth/AuthLayout";
 import AuthInput from "../components/auth/AuthInput";
 import AuthButton from "../components/auth/AuthButton";
+import { useTranslation } from "react-i18next";
 
 const API_URL = "https://localhost:7219/api/Auth";
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,11 +21,11 @@ export default function ForgotPassword() {
     setError("");
 
     if (!email.trim()) {
-      setError("Email is required");
+      setError(t("authMore.emailRequired"));
       return;
     }
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-      setError("Please enter a valid email");
+      setError(t("authMore.validEmail"));
       return;
     }
 
@@ -38,12 +40,12 @@ export default function ForgotPassword() {
       // Backend intentionally returns 200 regardless of whether email exists.
       if (!response.ok) {
         const json = await response.json().catch(() => ({}));
-        throw new Error(json?.message || "Something went wrong. Try again.");
+        throw new Error(json?.message || t("authMore.somethingWrong"));
       }
 
       setSent(true);
     } catch (err) {
-      setError(err.message || "Something went wrong. Try again.");
+      setError(err.message || t("authMore.somethingWrong"));
     } finally {
       setLoading(false);
     }
@@ -51,8 +53,8 @@ export default function ForgotPassword() {
 
   return (
     <AuthLayout
-      title="Forgot password"
-      subtitle="Enter your email and we'll send you a link to reset it"
+      title={t("authMore.forgotTitle")}
+      subtitle={t("authMore.forgotSubtitle")}
     >
       {sent ? (
         <div className="auth-form">
@@ -77,23 +79,22 @@ export default function ForgotPassword() {
             />
             <div>
               <strong style={{ display: "block", marginBottom: 4 }}>
-                Check your inbox
+                {t("authMore.checkInbox")}
               </strong>
-              If an account exists for <strong>{email}</strong>, you'll receive a
-              password reset link shortly. The link expires in 30 minutes.
+              {t("authMore.ifAccountExists", { email })}
             </div>
           </div>
 
           <div className="auth-form-footer" style={{ marginTop: 8 }}>
             <Link to="/login" className="auth-link">
-              Back to sign in
+              {t("authMore.backToSignIn")}
             </Link>
           </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="auth-form" noValidate>
           <AuthInput
-            label="Email address"
+            label={t("common.email")}
             name="email"
             type="email"
             value={email}
@@ -101,7 +102,7 @@ export default function ForgotPassword() {
               setEmail(e.target.value);
               if (error) setError("");
             }}
-            placeholder="you@example.com"
+            placeholder={t("authMore.emailPlaceholder")}
             icon={Mail}
             error={error}
             autoFocus
@@ -110,14 +111,14 @@ export default function ForgotPassword() {
           />
 
           <AuthButton loading={loading}>
-            Send Reset Link
+            {t("authMore.sendReset")}
             <ArrowRight size={16} strokeWidth={2.5} />
           </AuthButton>
 
           <div className="auth-form-footer">
-            <span>Remember your password?</span>
+            <span>{t("authMore.rememberPassword")}</span>
             <Link to="/login" className="auth-link">
-              Sign in
+              {t("authMore.signIn")}
             </Link>
           </div>
         </form>

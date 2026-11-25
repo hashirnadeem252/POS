@@ -2,6 +2,7 @@
 import { ShoppingCart, Trash2, RotateCcw } from "lucide-react";
 import DataTable from "../common/DataTable";
 import "../../assets/styles/grn/GRNDetailsTable.css";
+import EmptyState from "../common/EmptyState";
 
 function GRNDetailsTable({
   details,
@@ -118,12 +119,12 @@ function GRNDetailsTable({
       </div>
 
       {details.length === 0 ? (
-        <div className="empty-details">
-          <p>No products added yet.</p>
-          <p className="empty-hint">
-            Search and add products above, or load from a purchase order.
-          </p>
-        </div>
+        <EmptyState
+          icon={<ShoppingCart size={36} strokeWidth={1.25} />}
+          title="No products added yet."
+          description="Search and add products above, or load from a purchase order."
+          compact
+        />
       ) : (
         <DataTable
           data={details}

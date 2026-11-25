@@ -6,6 +6,7 @@
     Plus,
     Edit,
     Trash2,
+    UploadCloud,
   } from "lucide-react";
   import DataTable from "../components/common/DataTable.jsx";
   import PageTabs from "../components/common/PageTabs.jsx";
@@ -14,6 +15,9 @@
   import useSearch from "../hooks/useSearch.js";
   import { useExport, exportConfigs } from "../hooks/useExport.js";
   import CustomerForm from "../components/customers/CustomerForm.jsx";
+  import SpreadsheetImportModal from "../components/common/SpreadsheetImportModal.jsx";
+  import { customerImportFields } from "../utils/importTemplates.js";
+  import { importRowsIndividually } from "../utils/spreadsheetImport.js";
   import {
     getCustomers,
     createCustomer,
@@ -35,6 +39,7 @@
     const [activeTab, setActiveTab] = useState(0);
     const [editingCustomer, setEditingCustomer] = useState(null);
     const [showExtraColumns, setShowExtraColumns] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
     const [customers, setCustomers] = useState([]);
 
     // =========================
@@ -99,6 +104,20 @@
       } catch (error) {
         console.error("Error loading customers:", error);
       }
+    }
+
+    async function importCustomerRows(rows) {
+      return importRowsIndividually(rows, createCustomer, (record) => ({
+        code: record.code,
+        name: record.name,
+        phone: record.phone || null,
+        email: record.email || null,
+        address: record.address || null,
+        city: record.city || null,
+        taxNumber: record.taxNumber || null,
+        openingBalance: 0,
+        isActive: true,
+      }));
     }
 
     // =========================
@@ -230,6 +249,15 @@
           addButtonLabel="Add Customer"
           addButtonIcon={Plus}
           flushTop={true}
+          extraActions={
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setShowImportModal(true)}
+            >
+              <UploadCloud size={16} /> Import
+            </button>
+          }
         >
           {/* Tab 0: All Customers */}
           <div>
@@ -282,6 +310,16 @@
             />
           </div>
         </PageTabs>
+        <SpreadsheetImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImport={importCustomerRows}
+          onImportSuccess={loadCustomers}
+          title="customers"
+          templateName="customer_import_template.csv"
+          fields={customerImportFields}
+          existingRecords={customers}
+        />
       </div>
     );
   }

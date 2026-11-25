@@ -5,12 +5,7 @@
    CONTAINER
    ======================================== */
 .salesperson-form-container {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  box-shadow: var(--shadow-sm);
-  max-width: 700px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .form-loading {
@@ -64,7 +59,7 @@
   gap: 20px;
 }
 
-.form-row {
+.salesperson-form .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
@@ -154,12 +149,7 @@
    RESPONSIVE
    ======================================== */
 @media (max-width: 768px) {
-  .salesperson-form-container {
-    padding: 16px;
-    margin: 0 8px;
-  }
-
-  .form-row {
+  .salesperson-form .form-row {
     grid-template-columns: 1fr;
     gap: 14px;
   }

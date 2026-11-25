@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Save, X, Building2 } from "lucide-react";
 import { getNextSupplierCode, saveSupplierCode } from "../../services/indexdb/sequenceService";
+import { requireCurrentAuthTenantId } from "../../utils/authTenant";
 import { notify } from "../../utils/notify";
 import FormInput from "../common/FormInput";
 import FormTextarea from "../common/FormTextarea";
@@ -27,13 +28,14 @@ function SupplierForm({ supplier, onClose, onSave }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // =========================
+ // =========================
   // GENERATE SUPPLIER CODE
   // =========================
   const generateSupplierCode = async () => {
     setIsGenerating(true);
     try {
-      const code = await getNextSupplierCode();
+      const tenantId = requireCurrentAuthTenantId(); // ✅ Get tenantId
+      const code = await getNextSupplierCode(tenantId); // ✅ Pass it
       setFormData((prev) => ({ ...prev, code }));
     } catch (error) {
       console.error("Error generating supplier code:", error);
@@ -103,9 +105,10 @@ function SupplierForm({ supplier, onClose, onSave }) {
       return;
     }
 
-    if (!supplier) {
+   if (!supplier) {
       try {
-        await saveSupplierCode();
+        const tenantId = requireCurrentAuthTenantId(); // ✅ Get tenantId
+        await saveSupplierCode(tenantId); // ✅ Pass it
       } catch (error) {
         console.error("Error saving supplier code sequence:", error);
       }
@@ -133,7 +136,7 @@ function SupplierForm({ supplier, onClose, onSave }) {
   // =========================
   if (isLoading) {
     return (
-      <div className="supplier-form-container">
+      <div className="supplier-form-container form-page">
         <div className="form-loading">Loading supplier...</div>
       </div>
     );
@@ -143,7 +146,7 @@ function SupplierForm({ supplier, onClose, onSave }) {
   // RENDER
   // =========================
   return (
-    <div className="supplier-form-container">
+    <div className="supplier-form-container form-page">
       {/* Header */}
       <div className="form-header">
         <h2>

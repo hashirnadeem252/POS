@@ -7,6 +7,9 @@
 .custom-select {
   position: relative;
   display: flex;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;

@@ -11,9 +11,14 @@ import {
   Users,
 } from "lucide-react";
 import { useAuth } from "../hooks/auth/useAuth";
+import BrandLogo from "../components/common/BrandLogo";
+import LanguageToggle from "../components/common/LanguageToggle";
+import heroImage from "../assets/images/hero.png";
 import "../assets/styles/auth/Auth.css";
+import { useTranslation } from "react-i18next";
 
 export default function Welcome() {
+  const { t } = useTranslation();
   const { isAuthenticated, loading } = useAuth();
 
   if (!loading && isAuthenticated) {
@@ -25,16 +30,16 @@ export default function Welcome() {
       {/* ── Top Bar ── */}
       <header className="welcome-header">
         <div className="welcome-logo">
-          <span className="welcome-logo-mark">PS</span>
-          <span className="welcome-logo-name">Rova</span>
+          <BrandLogo variant="full" />
         </div>
 
         <div className="welcome-header-actions">
+          <LanguageToggle />
           <Link to="/login" className="welcome-btn-text">
-            Sign in
+            {t("landing.signIn")}
           </Link>
           <Link to="/signup" className="welcome-btn-primary">
-            Get started
+            {t("landing.getStarted")}
             <ArrowRight size={14} strokeWidth={2.5} />
           </Link>
         </div>
@@ -46,59 +51,57 @@ export default function Welcome() {
           <div className="welcome-hero-inner">
             <div className="welcome-badge">
               <Zap size={13} strokeWidth={2.5} />
-              Built for modern retail
+              {t("landing.builtForRetail")}
             </div>
 
             <h1 className="welcome-title">
-              Sell faster.
+              {t("landing.sellFaster")}
               <br />
-              Grow <span className="welcome-title-accent">smarter.</span>
+              {t("landing.growSmarter")}
             </h1>
 
             <p className="welcome-subtitle">
-              A complete point-of-sale system for modern shops — fast billing,
-              smart inventory, barcode printing, and real-time insights, all in
-              one place.
+              {t("landing.description")}
             </p>
 
             <div className="welcome-cta">
               <Link to="/signup" className="welcome-cta-primary">
-                Start free
+                {t("landing.startFree")}
                 <ArrowRight size={16} strokeWidth={2.5} />
               </Link>
               <Link to="/login" className="welcome-cta-secondary">
-                I already have an account
+                {t("landing.existingAccount")}
               </Link>
             </div>
 
             <div className="welcome-trust">
               <ShieldCheck size={15} strokeWidth={2.2} />
-              <span>Your data stays private and secure</span>
+              <span>{t("landing.privateSecure")}</span>
             </div>
           </div>
           {/* ── Hero Mockup ── */}
-<div className="welcome-mockup">
-  <div className="welcome-mockup-glow" />
-  <div className="welcome-mockup-frame">
-    <div className="welcome-mockup-toolbar">
-      <span className="welcome-mockup-dot" />
-      <span className="welcome-mockup-dot" />
-      <span className="welcome-mockup-dot" />
-      <span className="welcome-mockup-url">
-        <ShieldCheck size={11} strokeWidth={2} />
-        app.pos-system.com/dashboard
-      </span>
-    </div>
-    <div className="welcome-mockup-body">
-      <img
-        src="src/assets/images/hero.png"
-        alt="Rova Dashboard Preview"
-        className="welcome-mockup-image"
-        loading="lazy"
-      />
-    </div>
-  </div>
-</div>
+          <div className="welcome-mockup">
+            <div className="welcome-mockup-glow" />
+            <div className="welcome-mockup-frame">
+              <div className="welcome-mockup-toolbar">
+                <span className="welcome-mockup-dot" />
+                <span className="welcome-mockup-dot" />
+                <span className="welcome-mockup-dot" />
+                <span className="welcome-mockup-url">
+                  <ShieldCheck size={11} strokeWidth={2} />
+                  SaleKhata <span>{t("landing.workspace")}</span>
+                </span>
+              </div>
+              <div className="welcome-mockup-body">
+                <img
+                  src={heroImage}
+                  alt={t("landing.previewAlt")}
+                  className="welcome-mockup-image"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          </div>
           {/* Decorative gradient orbs */}
           <div className="welcome-orb welcome-orb-1" />
           <div className="welcome-orb welcome-orb-2" />
@@ -106,78 +109,84 @@ export default function Welcome() {
         </div>
 
         {/* ── Feature Grid ── */}
-        <div className="welcome-features">
-          <div className="welcome-feature-card">
-            <span className="welcome-feature-icon">
-              <ShoppingCart size={22} strokeWidth={1.75} />
+        <section
+          className="welcome-features-section"
+          aria-labelledby="welcome-features-title"
+        >
+          <div className="welcome-features-heading">
+            <span className="welcome-section-eyebrow">
+              {t("landing.eyebrow")}
             </span>
-            <h3>Lightning-fast sales</h3>
-            <p>
-              Ring up sales in seconds with a snappy, keyboard-friendly POS
-              interface.
-            </p>
+            <h2 id="welcome-features-title">{t("landing.featuresTitle")}</h2>
+            <p>{t("landing.featuresIntro")}</p>
           </div>
+          <div className="welcome-features">
+            <div className="welcome-feature-card">
+              <span className="welcome-feature-icon">
+                <ShoppingCart size={22} strokeWidth={1.75} />
+              </span>
+              <h3>{t("landing.fastSales")}</h3>
+              <p>
+                {t("landing.fastSalesText")}
+              </p>
+            </div>
 
-          <div className="welcome-feature-card">
-            <span className="welcome-feature-icon">
-              <Package size={22} strokeWidth={1.75} />
-            </span>
-            <h3>Smart inventory</h3>
-            <p>
-              Stock updates automatically with every sale, return, and purchase
-              order.
-            </p>
-          </div>
+            <div className="welcome-feature-card">
+              <span className="welcome-feature-icon">
+                <Package size={22} strokeWidth={1.75} />
+              </span>
+              <h3>{t("landing.inventory")}</h3>
+              <p>
+                {t("landing.inventoryText")}
+              </p>
+            </div>
 
-          <div className="welcome-feature-card">
-            <span className="welcome-feature-icon">
-              <Barcode size={22} strokeWidth={1.75} />
-            </span>
-            <h3>Barcode printing</h3>
-            <p>
-              Generate and print label-perfect barcodes for any product
-              instantly.
-            </p>
-          </div>
+            <div className="welcome-feature-card">
+              <span className="welcome-feature-icon">
+                <Barcode size={22} strokeWidth={1.75} />
+              </span>
+              <h3>{t("landing.barcode")}</h3>
+              <p>
+                {t("landing.barcodeText")}
+              </p>
+            </div>
 
-          <div className="welcome-feature-card">
-            <span className="welcome-feature-icon">
-              <BarChart3 size={22} strokeWidth={1.75} />
-            </span>
-            <h3>Clear insights</h3>
-            <p>
-              See what's selling, what's not, and where your money goes — at a
-              glance.
-            </p>
-          </div>
+            <div className="welcome-feature-card">
+              <span className="welcome-feature-icon">
+                <BarChart3 size={22} strokeWidth={1.75} />
+              </span>
+              <h3>{t("landing.insights")}</h3>
+              <p>
+                {t("landing.insightsText")}
+              </p>
+            </div>
 
-          <div className="welcome-feature-card">
-            <span className="welcome-feature-icon">
-              <Users size={22} strokeWidth={1.75} />
-            </span>
-            <h3>Multi-user ready</h3>
-            <p>
-              Assign roles for admins, managers, and cashiers with one simple
-              login.
-            </p>
-          </div>
+            <div className="welcome-feature-card">
+              <span className="welcome-feature-icon">
+                <Users size={22} strokeWidth={1.75} />
+              </span>
+              <h3>{t("landing.multiUser")}</h3>
+              <p>
+                {t("landing.multiUserText")}
+              </p>
+            </div>
 
-          <div className="welcome-feature-card welcome-feature-card-accent">
-            <span className="welcome-feature-icon">
-              <ShieldCheck size={22} strokeWidth={1.75} />
-            </span>
-            <h3>Enterprise-grade security</h3>
-            <p>
-              Session-based authentication keeps your business data safe and
-              private.
-            </p>
+            <div className="welcome-feature-card welcome-feature-card-accent">
+              <span className="welcome-feature-icon">
+                <ShieldCheck size={22} strokeWidth={1.75} />
+              </span>
+              <h3>{t("landing.security")}</h3>
+              <p>
+                {t("landing.securityText")}
+              </p>
+            </div>
           </div>
-        </div>
+        </section>
       </main>
 
       {/* ── Footer ── */}
       <footer className="welcome-footer">
-        <span>© {new Date().getFullYear()} Rova. All rights reserved.</span>
+        <span>{t("landing.copyright", { year: new Date().getFullYear() })}</span>
       </footer>
     </div>
   );

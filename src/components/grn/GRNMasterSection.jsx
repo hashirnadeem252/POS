@@ -28,19 +28,18 @@ function GRNMasterSection({
       </h3>
 
       <div className="form-row">
-        <CodeInput
-          label="GRN Number"
-          name="grnNumber"
-          value={formData.grnNumber}
-          onChange={onChange}
-          onGenerate={onGenerateCode}
-          canGenerate={!isEditing}
-          isGenerating={isGenerating}
-          disabled={isEditing}
-          required
-          placeholder="Auto-generated"
-          helper={isEditing ? "Code locked in edit mode" : "Auto-generated"}
-        />
+      <CodeInput
+  label="GRN Number"
+  name="grnNumber"
+  value={formData.grnNumber}
+  onChange={onChange}
+  onGenerate={onGenerateCode}
+  canGenerate={false}
+  isGenerating={false}
+  disabled
+  placeholder="Auto"
+  helper={isEditing ? "Code locked in edit mode" : "Assigned when you save"}
+/>
 
         <FormSelect
           label="Supplier"

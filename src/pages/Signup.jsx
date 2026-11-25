@@ -8,10 +8,14 @@ import AuthInput from "../components/auth/AuthInput";
 import PasswordInput from "../components/auth/PasswordInput";
 import AuthButton from "../components/auth/AuthButton";
 import { notify } from "../utils/notify";
+import { useTranslation } from "react-i18next";
+import { useSettings } from "../contexts/SettingsContext";
 
 export default function Signup() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { signup } = useAuth();
+  const { refreshSettings } = useSettings(); 
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -39,20 +43,20 @@ export default function Signup() {
 
   const validateStep1 = () => {
     const errs = {};
-    if (!form.storeName.trim()) errs.storeName = "Please enter your business name";
+    if (!form.storeName.trim()) errs.storeName = t("authMore.businessRequired");
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const validateStep2 = () => {
     const errs = {};
-    if (!form.fullName.trim()) errs.fullName = "Full name is required";
-    if (!form.username.trim()) errs.username = "Username is required";
-    if (!form.email.trim()) errs.email = "Email is required";
-    else if (!/^\S+@\S+\.\S+$/.test(form.email)) errs.email = "Invalid email format";
-    if (!form.password) errs.password = "Password is required";
-    else if (form.password.length < 6) errs.password = "Must be at least 6 characters";
-    if (form.password !== form.confirmPassword) errs.confirmPassword = "Passwords do not match";
+    if (!form.fullName.trim()) errs.fullName = t("authMore.fullNameRequired");
+    if (!form.username.trim()) errs.username = t("authMore.usernameRequired");
+    if (!form.email.trim()) errs.email = t("authMore.emailRequired");
+    else if (!/^\S+@\S+\.\S+$/.test(form.email)) errs.email = t("authMore.invalidEmail");
+    if (!form.password) errs.password = t("authMore.passwordRequired");
+    else if (form.password.length < 6) errs.password = t("authMore.mustSixChars");
+    if (form.password !== form.confirmPassword) errs.confirmPassword = t("authMore.passwordsMismatch");
     
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -76,6 +80,7 @@ export default function Signup() {
         role: "Admin", 
       });
 
+      // ✅ Save settings
       await fetch("https://localhost:7219/api/Settings", {
         method: "PUT",
         headers: {
@@ -90,11 +95,12 @@ export default function Signup() {
           defaultTaxRate: 0,
         }),
       });
+  await refreshSettings();
 
-      notify.success("Welcome to Rova! Your business is ready.");
+      notify.success(t("authMore.welcomeSignup"));
       navigate("/dashboard", { replace: true });
     } catch (error) {
-      notify.error(error?.message || "Setup failed. Please try again.");
+      notify.error(error?.message || t("authMore.setupFailed"));
     } finally {
       setLoading(false);
     }
@@ -113,7 +119,7 @@ export default function Signup() {
         }}>
           {step > 1 ? <Check size={14} strokeWidth={3} /> : "1"}
         </div>
-        <span style={{ fontSize: "13px", fontWeight: 600, color: step === 1 ? "var(--color-text-primary)" : "var(--color-text-secondary)" }}>Business</span>
+        <span style={{ fontSize: "13px", fontWeight: 600, color: step === 1 ? "var(--color-text-primary)" : "var(--color-text-secondary)" }}>{t("authMore.businessStep")}</span>
       </div>
       
       <div style={{ width: 32, height: 2, background: step > 1 ? "var(--color-primary)" : "var(--color-border-light)" }} />
@@ -127,15 +133,15 @@ export default function Signup() {
         }}>
           2
         </div>
-        <span style={{ fontSize: "13px", fontWeight: 600, color: step === 2 ? "var(--color-text-primary)" : "var(--color-text-secondary)" }}>Account</span>
+        <span style={{ fontSize: "13px", fontWeight: 600, color: step === 2 ? "var(--color-text-primary)" : "var(--color-text-secondary)" }}>{t("authMore.accountStep")}</span>
       </div>
     </div>
   );
 
   return (
     <AuthLayout
-      title={step === 1 ? "Set up your business" : "Create Admin account"}
-      subtitle={step === 1 ? "Tell us about your store to get started." : "You will be the owner of this workspace."}
+      title={step === 1 ? t("authMore.setupBusiness") : t("authMore.createAdmin")}
+      subtitle={step === 1 ? t("authMore.setupSubtitle") : t("authMore.adminSubtitle")}
     >
       <div style={{ padding: "8px 0" }}>
         <StepIndicator />
@@ -146,57 +152,50 @@ export default function Signup() {
         {step === 1 && (
           <div className="animate-fade-in">
             
-            <label style={{ display: "block", marginBottom: "12px", fontWeight: 600, fontSize: "14px", color: "var(--color-text-primary)" }}>
-              Select Business Type
-            </label>
-            
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
-              {/* Retail Card */}
-              <div 
-                onClick={() => handleBusinessSelect("Retail")}
-                style={{
-                  border: `2px solid ${form.businessType === "Retail" ? "var(--color-primary)" : "var(--color-border)"}`,
-                  borderRadius: "var(--radius-lg)", padding: "20px 16px", textAlign: "center", cursor: "pointer",
-                  transition: "var(--transition)", background: form.businessType === "Retail" ? "var(--color-primary-soft)" : "transparent",
-                  position: "relative"
-                }}
-              >
-                {form.businessType === "Retail" && (
-                  <div style={{ position: "absolute", top: 8, right: 8, background: "var(--color-primary)", borderRadius: "50%", padding: 4 }}>
-                    <Check size={10} color="#fff" strokeWidth={3} />
-                  </div>
-                )}
-                <Store size={28} style={{ color: form.businessType === "Retail" ? "var(--color-primary)" : "var(--color-text-secondary)", margin: "0 auto 10px" }} />
-                <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 600, color: "var(--color-text-primary)" }}>Retail</h3>
-              </div>
+            <fieldset className="signup-business-fieldset">
+              <legend className="signup-business-label">{t("authMore.selectBusiness")}</legend>
+              <div className="signup-business-options">
+                <button
+                  type="button"
+                  className={`signup-business-option${form.businessType === "Retail" ? " is-selected" : ""}`}
+                  onClick={() => handleBusinessSelect("Retail")}
+                  aria-pressed={form.businessType === "Retail"}
+                >
+                  <span className="signup-business-option-icon"><Store size={24} strokeWidth={1.8} /></span>
+                  <span className="signup-business-option-copy">
+                    <strong>{t("authMore.retail")}</strong>
+                    <span>{t("authMore.retailDescription")}</span>
+                  </span>
+                  <span className="signup-business-option-check" aria-hidden="true">
+                    {form.businessType === "Retail" && <Check size={13} strokeWidth={3} />}
+                  </span>
+                </button>
 
-              {/* Restaurant Card */}
-              <div 
-                onClick={() => handleBusinessSelect("Restaurant")}
-                style={{
-                  border: `2px solid ${form.businessType === "Restaurant" ? "var(--color-primary)" : "var(--color-border)"}`,
-                  borderRadius: "var(--radius-lg)", padding: "20px 16px", textAlign: "center", cursor: "pointer",
-                  transition: "var(--transition)", background: form.businessType === "Restaurant" ? "var(--color-primary-soft)" : "transparent",
-                  position: "relative"
-                }}
-              >
-                {form.businessType === "Restaurant" && (
-                  <div style={{ position: "absolute", top: 8, right: 8, background: "var(--color-primary)", borderRadius: "50%", padding: 4 }}>
-                    <Check size={10} color="#fff" strokeWidth={3} />
-                  </div>
-                )}
-                <Utensils size={28} style={{ color: form.businessType === "Restaurant" ? "var(--color-primary)" : "var(--color-text-secondary)", margin: "0 auto 10px" }} />
-                <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 600, color: "var(--color-text-primary)" }}>Restaurant</h3>
+                <button
+                  type="button"
+                  className={`signup-business-option${form.businessType === "Restaurant" ? " is-selected" : ""}`}
+                  onClick={() => handleBusinessSelect("Restaurant")}
+                  aria-pressed={form.businessType === "Restaurant"}
+                >
+                  <span className="signup-business-option-icon"><Utensils size={24} strokeWidth={1.8} /></span>
+                  <span className="signup-business-option-copy">
+                    <strong>{t("authMore.restaurant")}</strong>
+                    <span>{t("authMore.restaurantDescription")}</span>
+                  </span>
+                  <span className="signup-business-option-check" aria-hidden="true">
+                    {form.businessType === "Restaurant" && <Check size={13} strokeWidth={3} />}
+                  </span>
+                </button>
               </div>
-            </div>
+            </fieldset>
 
             <div style={{ marginBottom: "24px" }}>
               <AuthInput
-                label="Business Name"
+                label={t("authMore.businessName")}
                 name="storeName"
                 value={form.storeName}
                 onChange={handleChange}
-                placeholder="e.g., Ali's Supermarket"
+                placeholder={t("authMore.businessExample")}
                 icon={Store}
                 error={errors.storeName}
                 autoFocus
@@ -205,13 +204,13 @@ export default function Signup() {
             </div>
 
             <AuthButton type="button" onClick={nextStep}>
-              Continue to Admin Setup
+              {t("authMore.continueAdmin")}
               <ArrowRight size={16} strokeWidth={2.5} />
             </AuthButton>
 
             <div className="auth-form-footer">
-              <span>Already have an account?</span>
-              <Link to="/login" className="auth-link">Sign in</Link>
+              <span>{t("authMore.alreadyAccount")}</span>
+              <Link to="/login" className="auth-link">{t("authMore.signIn")}</Link>
             </div>
           </div>
         )}
@@ -222,11 +221,11 @@ export default function Signup() {
         {step === 2 && (
           <form onSubmit={handleFinalSubmit} className="auth-form animate-fade-in" noValidate>
             <AuthInput 
-              label="Full Name" 
+              label={t("authMore.fullName")}
               name="fullName" 
               value={form.fullName} 
               onChange={handleChange} 
-              placeholder="e.g., Ahmed Khan" 
+              placeholder={t("authMore.nameExample")}
               icon={User} 
               error={errors.fullName} 
               autoFocus
@@ -235,17 +234,17 @@ export default function Signup() {
             
             <div className="auth-form-row">
               <AuthInput 
-                label="Username" 
+                label={t("authMore.username")}
                 name="username" 
                 value={form.username} 
                 onChange={handleChange} 
-                placeholder="Admin username" 
+                placeholder={t("authMore.adminUsername")}
                 icon={AtSign} 
                 error={errors.username} 
                 required 
               />
               <AuthInput 
-                label="Email" 
+                label={t("authMore.email")}
                 type="email" 
                 name="email" 
                 value={form.email} 
@@ -258,27 +257,27 @@ export default function Signup() {
             </div>
             
             <PasswordInput 
-              label="Password" 
+              label={t("auth.password")}
               name="password" 
               value={form.password} 
               onChange={handleChange} 
-              placeholder="At least 6 characters" 
+              placeholder={t("authMore.passwordLength")}
               error={errors.password} 
               required 
             />
             
             <PasswordInput 
-              label="Confirm Password" 
+              label={t("authMore.confirmPasswordShort")}
               name="confirmPassword" 
               value={form.confirmPassword} 
               onChange={handleChange} 
-              placeholder="Re-enter password" 
+              placeholder={t("auth.confirmPasswordPlaceholder")}
               error={errors.confirmPassword} 
               required 
             />
 
             <AuthButton loading={loading}>
-              Create Account & Launch
+              {t("authMore.launchAccount")}
               <Sparkles size={16} strokeWidth={2.5} />
             </AuthButton>
 
@@ -291,7 +290,7 @@ export default function Signup() {
                   fontSize: "13px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 
                 }}
               >
-                <ArrowLeft size={14} /> Back to Business Info
+                <ArrowLeft size={14} /> {t("authMore.backBusiness")}
               </button>
             </div>
           </form>

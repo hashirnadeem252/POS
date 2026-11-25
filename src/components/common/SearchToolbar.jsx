@@ -1,6 +1,7 @@
 // components/common/SearchToolbar.jsx
 import { Search, Eye, EyeOff, Printer, Download, Filter, ChevronDown } from "lucide-react";
 import "../../assets/styles/common/SearchToolbar.css";
+import { useTranslation } from "react-i18next";
 
 function SearchToolbar({
   showSearch = false,
@@ -19,6 +20,7 @@ function SearchToolbar({
   extraButtons = [],
   className = "",
 }) {
+  const { t } = useTranslation();
   return (
     <div className={`table-toolbar ${className}`}>
       <div className="toolbar-left">
@@ -42,7 +44,7 @@ function SearchToolbar({
           <button
             className={`toolbar-btn btn-filter ${showExtraColumns ? "active" : ""}`}
             onClick={onToggleExtraColumns}
-            title="Toggle extra columns"
+            title={t("common.toggleColumns")}
           >
             <EyeOff size={16} strokeWidth={1.75} />
             {extraColumnsLabel}
@@ -71,7 +73,7 @@ function SearchToolbar({
           <button
             className="toolbar-btn btn-print"
             onClick={onPrint}
-            title="Print"
+            title={t("common.print")}
           >
             <Printer size={16} strokeWidth={1.75} />
             {printLabel}
@@ -83,7 +85,7 @@ function SearchToolbar({
           <button
             className="toolbar-btn btn-csv"
             onClick={onExportCSV}
-            title="Export to CSV"
+            title={t("common.exportToCsv")}
           >
             <Download size={16} strokeWidth={1.75} />
             {csvLabel}

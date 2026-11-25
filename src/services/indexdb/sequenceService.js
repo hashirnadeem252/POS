@@ -1,211 +1,117 @@
 // src/services/indexdb/sequenceService.js
-import { STORES, getStore } from "./db.js";
+import { db, STORES } from "./db";
 
-// =========================
-// GET NEXT SEQUENCE VALUE (Increment only on save)
-// =========================
-export async function getNextSequenceValue(entity, categoryName = null) {
-  let prefix = "PRD";
-  
-  // Set prefix based on entity
+// Row shape: { tenantId, entity: "<entity>_<prefix>", prefix, year, value }
+// Primary key: [tenantId+entity], so tenants can never share a counter.
+const table = () => db.table(STORES.SEQUENCES);
+
+const seqKey = (entity, prefix) => `${entity}_${prefix}`;
+
+function getPrefix(entity, categoryName) {
   if (entity === "product") {
-    prefix = "PRD";
     if (categoryName && categoryName.length > 0) {
-      prefix = categoryName.length >= 3 
-        ? categoryName.substring(0, 3).toUpperCase() 
+      return categoryName.length >= 3
+        ? categoryName.substring(0, 3).toUpperCase()
         : categoryName.toUpperCase();
     }
-  } else if (entity === "supplier") {
-    prefix = "SUP";
-  } else if (entity === "customer") {
-    prefix = "CUS";
-  } else if (entity === "purchase") {
-    prefix = "PO";
-  } else if (entity === "salesperson") {
-    prefix = "SP";
-  } else if (entity === "grn") {
-    prefix = "GRN";
+    return "PRD";
   }
+  if (entity === "supplier") return "SUP";
+  if (entity === "customer") return "CUS";
+  if (entity === "purchase") return "PO";
+  if (entity === "salesperson") return "SP";
+  if (entity === "grn") return "GRN";
+  return "PRD";
+}
 
-  const store = await getStore(STORES.SEQUENCES, "readwrite");
+function formatCode(prefix, year, value) {
+  const yearShort = String(year).slice(-2);
+  return `${prefix}-${yearShort}-${String(value).padStart(4, "0")}`;
+}
 
-  return new Promise((resolve, reject) => {
-    const key = `${entity}_${prefix}`;
-    const getRequest = store.get(key);
+// Current counter for this tenant/entity/prefix, reset if the year changed.
+async function readSequence(entity, prefix, tenantId) {
+  const key = seqKey(entity, prefix);
+  const year = new Date().getFullYear();
+  const existing = await table().get([tenantId, key]);
 
-    getRequest.onsuccess = () => {
-      let sequence = getRequest.result;
-      const currentYear = new Date().getFullYear();
+  if (!existing || existing.year !== year) {
+    return { tenantId, entity: key, prefix, year, value: 0 };
+  }
+  return existing;
+}
 
-      if (!sequence) {
-        sequence = {
-          entity: key,
-          prefix: prefix,
-          year: currentYear,
-          value: 0,
-        };
-      }
+// =========================
+// GET NEXT SEQUENCE VALUE (preview only, does not save)
+// =========================
+export async function getNextSequenceValue(entity, categoryName = null, tenantId) {
+  if (!tenantId) throw new Error("tenantId is required for sequences");
 
-      if (sequence.year !== currentYear) {
-        sequence.year = currentYear;
-        sequence.value = 0;
-      }
+  const prefix = getPrefix(entity, categoryName);
+  const sequence = await readSequence(entity, prefix, tenantId);
+  const nextValue = sequence.value + 1;
+  const code = formatCode(prefix, sequence.year, nextValue);
 
-      const currentValue = sequence.value;
-      const nextValue = currentValue + 1;
-      
-      const yearShort = String(sequence.year).slice(-2);
-      const seqNumber = String(nextValue).padStart(4, "0");
-      const code = `${prefix}-${yearShort}-${seqNumber}`;
+  return { code, sequence, nextValue };
+}
 
-      resolve({
-        code: code,
-        sequence: sequence,
-        nextValue: nextValue,
-      });
-    };
+// =========================
+// INCREMENT SEQUENCE (atomic read + write)
+// =========================
+export async function incrementSequence(entity, categoryName = null, tenantId) {
+  if (!tenantId) throw new Error("tenantId is required for sequences");
 
-    getRequest.onerror = () => reject(getRequest.error);
+  const prefix = getPrefix(entity, categoryName);
+
+  return db.transaction("rw", table(), async () => {
+    const sequence = await readSequence(entity, prefix, tenantId);
+    sequence.value += 1;
+    await table().put(sequence);
+    return formatCode(prefix, sequence.year, sequence.value);
   });
 }
 
 // =========================
-// INCREMENT SEQUENCE (Call on save)
+// WRAPPER FUNCTIONS (unchanged signatures)
 // =========================
-export async function incrementSequence(entity, categoryName = null) {
-  let prefix = "PRD";
-  
-  // Set prefix based on entity
-  if (entity === "product") {
-    prefix = "PRD";
-    if (categoryName && categoryName.length > 0) {
-      prefix = categoryName.length >= 3 
-        ? categoryName.substring(0, 3).toUpperCase() 
-        : categoryName.toUpperCase();
-    }
-  } else if (entity === "supplier") {
-    prefix = "SUP";
-  } else if (entity === "customer") {
-    prefix = "CUS";
-  } else if (entity === "purchase") {
-    prefix = "PO";
-  } else if (entity === "salesperson") {
-    prefix = "SP";
-  } else if (entity === "grn") {  // ✅ ADD THIS
-    prefix = "GRN";
-  }
-
-  const store = await getStore(STORES.SEQUENCES, "readwrite");
-
-  return new Promise((resolve, reject) => {
-    const key = `${entity}_${prefix}`;
-    const getRequest = store.get(key);
-
-    getRequest.onsuccess = () => {
-      let sequence = getRequest.result;
-      const currentYear = new Date().getFullYear();
-
-      if (!sequence) {
-        sequence = {
-          entity: key,
-          prefix: prefix,
-          year: currentYear,
-          value: 0,
-        };
-      }
-
-      if (sequence.year !== currentYear) {
-        sequence.year = currentYear;
-        sequence.value = 0;
-      }
-
-      // ✅ INCREMENT SEQUENCE
-      sequence.value += 1;
-
-      const putRequest = store.put(sequence);
-
-      putRequest.onsuccess = () => {
-        const yearShort = String(sequence.year).slice(-2);
-        const seqNumber = String(sequence.value).padStart(4, "0");
-        const code = `${prefix}-${yearShort}-${seqNumber}`;
-        resolve(code);
-      };
-
-      putRequest.onerror = () => reject(putRequest.error);
-    };
-
-    getRequest.onerror = () => reject(getRequest.error);
-  });
+export async function getNextProductCode(categoryName = null, tenantId) {
+  return (await getNextSequenceValue("product", categoryName, tenantId)).code;
+}
+export async function saveProductCode(categoryName = null, tenantId) {
+  return incrementSequence("product", categoryName, tenantId);
 }
 
-// =========================
-// GET NEXT PRODUCT CODE
-// =========================
-export async function getNextProductCode(categoryName = null) {
-  const result = await getNextSequenceValue("product", categoryName);
-  return result.code;
+export async function getNextSupplierCode(tenantId) {
+  return (await getNextSequenceValue("supplier", null, tenantId)).code;
+}
+export async function saveSupplierCode(tenantId) {
+  return incrementSequence("supplier", null, tenantId);
 }
 
-export async function saveProductCode(categoryName = null) {
-  return await incrementSequence("product", categoryName);
+export async function getNextCustomerCode(tenantId) {
+  return (await getNextSequenceValue("customer", null, tenantId)).code;
+}
+export async function saveCustomerCode(tenantId) {
+  return incrementSequence("customer", null, tenantId);
 }
 
-// =========================
-// GET NEXT SUPPLIER CODE
-// =========================
-export async function getNextSupplierCode() {
-  const result = await getNextSequenceValue("supplier");
-  return result.code;
+export async function getNextPurchaseCode(tenantId) {
+  return (await getNextSequenceValue("purchase", null, tenantId)).code;
+}
+export async function savePurchaseCode(tenantId) {
+  return incrementSequence("purchase", null, tenantId);
 }
 
-export async function saveSupplierCode() {
-  return await incrementSequence("supplier");
+export async function getNextSalesPersonCode(tenantId) {
+  return (await getNextSequenceValue("salesperson", null, tenantId)).code;
+}
+export async function saveSalesPersonCode(tenantId) {
+  return incrementSequence("salesperson", null, tenantId);
 }
 
-// =========================
-// GET NEXT CUSTOMER CODE
-// =========================
-export async function getNextCustomerCode() {
-  const result = await getNextSequenceValue("customer");
-  return result.code;
+export async function getNextGRNCode(tenantId) {
+  return (await getNextSequenceValue("grn", null, tenantId)).code;
 }
-
-export async function saveCustomerCode() {
-  return await incrementSequence("customer");
-}
-
-// =========================
-// PURCHASE SEQUENCES
-// =========================
-export async function getNextPurchaseCode() {
-  const result = await getNextSequenceValue("purchase");
-  return result.code;
-}
-
-export async function savePurchaseCode() {
-  return await incrementSequence("purchase");
-}
-
-// =========================
-// SALESPERSON SEQUENCES
-// =========================
-export async function getNextSalesPersonCode() {
-  const result = await getNextSequenceValue("salesperson");
-  return result.code;
-}
-
-export async function saveSalesPersonCode() {
-  return await incrementSequence("salesperson");
-}
-
-// =========================
-// GRN SEQUENCES
-// =========================
-export async function getNextGRNCode() {
-  const result = await getNextSequenceValue("grn");
-  return result.code;
-}
-
-export async function saveGRNCode() {
-  return await incrementSequence("grn");
+export async function saveGRNCode(tenantId) {
+  return incrementSequence("grn", null, tenantId);
 }

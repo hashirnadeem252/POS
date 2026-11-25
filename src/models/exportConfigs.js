@@ -128,16 +128,18 @@ export const salesExportConfig = {
   filename: 'sales',
   headers: [
     "Invoice Number", "Customer", "Sales Person",
-    "Date", "Total", "Status", "Payment Method"
+    "Date", "Total", "Status", "Payment Method", "Paid", "Balance"
   ],
   rowMapper: (s) => [
     s.invoiceNumber || "",
     s.customerName || "Walk-in",
     s.salesPersonName || "-",
-    s.saleDate ? new Date(s.saleDate).toLocaleDateString() : "",
+    s.saleDate ? new Date(s.saleDate).toLocaleString() : "",
     s.total || 0,
     s.status || "Draft",
     s.paymentMethod || "-",
+    s.paidAmount || 0,
+    s.remainingAmount || 0,
   ],
 };
 
@@ -147,18 +149,19 @@ export const salesReturnExportConfig = {
   subtitle: 'Generated from POS System',
   filename: 'sales-returns',
   headers: [
-    "Return ID", "Return Number", "Sale ID", "Customer ID",
-    "Return Date", "Total", "Type", "Manual", "Comments"
+    "Return ID", "Return Number", "Original Invoice", "Customer",
+    "Return Date", "Total", "Type", "Source", "Reason", "Comments"
   ],
   rowMapper: (r) => [
     r.salesReturnId || "",
     r.returnNumber || "",
-    r.saleId || "",
-    r.customerId || "Walk-in",
-    r.returnDate ? new Date(r.returnDate).toLocaleDateString() : "",
+    r.invoiceNumber || r.originalInvoiceNumber || "",
+    r.customerName || r.customerId || "Walk-in",
+    r.returnDate ? new Date(r.returnDate).toLocaleString() : "",
     r.total || 0,
     r.returnType || "Return",
     r.isManualReturn ? "Manual" : "Invoice",
+    r.returnReason || "",
     r.comments || "",
   ],
 };

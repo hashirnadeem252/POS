@@ -3,6 +3,8 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, Check, Search, X } from "lucide-react";
 import "../../assets/styles/common/FormSelect.css";
+import InfoIcon from "./InfoIcon";
+import EmptyState from "./EmptyState";
 
 /**
  * FormSelect — smart dropdown with auto-flip, search, and portal rendering
@@ -18,6 +20,7 @@ function FormSelect({
   required = false,
   disabled = false,
   helper = null,
+  info = null,
   error = null,
   searchable = true,
   emptyMessage = "No options",
@@ -273,9 +276,10 @@ function FormSelect({
 
       <div className="custom-select-options">
         {filteredOptions.length === 0 ? (
-          <div className="custom-select-empty">
-            {searchTerm ? `No matches for "${searchTerm}"` : emptyMessage}
-          </div>
+          <EmptyState
+            title={searchTerm ? `No matches for "${searchTerm}"` : emptyMessage}
+            compact
+          />
         ) : (
           filteredOptions.map((option, idx) => {
             const isSelected = String(option.value) === String(value);
@@ -307,6 +311,7 @@ function FormSelect({
       {label && (
         <label className="form-label">
           {label}
+          {info && <InfoIcon content={info} label={`${label} information`} />}
           {required && <span className="form-required">*</span>}
         </label>
       )}

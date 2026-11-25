@@ -1,7 +1,10 @@
 // components/sales/POSItemsTab.jsx
-import { useState, useRef, useEffect } from "react";
-import { Search, Barcode, Box } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
+import { Barcode, Filter, Package, X } from "lucide-react";
 import { notify } from "../../utils/notify";
+import { useTranslation } from "react-i18next";
+import { useSettings } from "../../contexts/SettingsContext";
+import EmptyState from "../common/EmptyState";
 
 function POSItemsTab({
   mode,
@@ -14,38 +17,65 @@ function POSItemsTab({
   totalPages,
   currentPage,
   addProductToCart,
-  foundSale,
+  selectedCategory,
+  setSelectedCategory,
+  showOutOfStock,
+  setShowOutOfStock,
+  categories,
   setShowProductModal,
 }) {
+  const { t } = useTranslation();
   const searchInputRef = useRef(null);
+  const { formatCurrency } = useSettings();
+  const [showCategoryFilters, setShowCategoryFilters] = useState(false);
 
-  // Auto-focus search bar on mount (Barcode scanners type instantly)
+  // Auto-focus search bar (barcode scanners type instantly).
   useEffect(() => {
     if (searchInputRef.current) searchInputRef.current.focus();
   }, [mode]);
 
-  const handleSearchChange = (e) => {
-    const val = e.target.value;
+  useEffect(() => {
+    let filtered = localProducts;
+
+    if (selectedCategory !== null) {
+      filtered = filtered.filter(
+        (product) => product.categoryId === selectedCategory
+      );
+    }
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (product) =>
+          product.name?.toLowerCase().includes(term) ||
+          product.code?.toLowerCase().includes(term) ||
+          product.barcode?.toLowerCase().includes(term)
+      );
+    }
+
+    if (!showOutOfStock) {
+      filtered = filtered.filter((product) => Number(product.currentStock) > 0);
+    }
+
+    setFilteredProducts(filtered);
+    setCurrentPage(1);
+  }, [
+    localProducts,
+    searchTerm,
+    selectedCategory,
+    showOutOfStock,
+    setCurrentPage,
+    setFilteredProducts,
+  ]);
+
+  const handleSearchChange = (val) => {
     setSearchTerm(val);
     setCurrentPage(1);
-    
-    if (!val.trim()) {
-      setFilteredProducts(localProducts);
-    } else {
-      const term = val.toLowerCase();
-      const filtered = localProducts.filter(
-        (p) =>
-          p.name?.toLowerCase().includes(term) ||
-          p.code?.toLowerCase().includes(term) ||
-          p.barcode?.toLowerCase().includes(term)
-      );
-      setFilteredProducts(filtered);
-    }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && searchTerm.trim()) {
-      // Exact match for barcode scanner
+      // Exact match for barcode scanner.
       const term = searchTerm.trim().toLowerCase();
       const exactMatch = localProducts.find(
         (p) => p.code?.toLowerCase() === term || p.barcode?.toLowerCase() === term
@@ -55,10 +85,10 @@ function POSItemsTab({
         addProductToCart(exactMatch);
         setSearchTerm("");
         setFilteredProducts(localProducts);
-        // Keep focus in the box for the next scan
+        // Keep focus in the box for the next scan.
         setTimeout(() => searchInputRef.current?.focus(), 50);
       } else if (currentItems.length === 1) {
-        // If exactly one result matches the text, add it
+        // If exactly one result matches the text, add it.
         addProductToCart(currentItems[0]);
         setSearchTerm("");
         setFilteredProducts(localProducts);
@@ -70,87 +100,151 @@ function POSItemsTab({
   };
 
   return (
-    <div className="pos-items-tab" style={{ display: "flex", flexDirection: "column", height: "100%", gap: "16px" }}>
-      
-      {/* Search / Barcode Input */}
-      <div style={{ position: "relative" }}>
-        <div style={{ position: "absolute", left: 14, top: 14, color: "var(--color-text-secondary)" }}>
-          <Barcode size={20} />
+    <div className="pos-items-tab">
+      <div className="search-row">
+        <div className="search-input-wrapper">
+          <div className="pos-item-search">
+            <Barcode className="pos-item-search-icon" size={17} strokeWidth={2} />
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="pos-item-search-input"
+              placeholder={t("pos.scanBarcode")}
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                className="pos-item-search-clear"
+                onClick={() => {
+                  handleSearchChange("");
+                  searchInputRef.current?.focus();
+                }}
+                aria-label="Clear product search"
+              >
+                <X size={15} />
+              </button>
+            )}
+            {!searchTerm && <span className="pos-item-search-hint">Enter to add</span>}
+          </div>
         </div>
-        <input
-          ref={searchInputRef}
-          type="text"
-          placeholder="Scan barcode or type product name..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          onKeyDown={handleKeyDown}
-          style={{
-            width: "100%", padding: "14px 14px 14px 44px", fontSize: "16px",
-            borderRadius: "var(--radius-md)", border: "2px solid var(--color-primary)",
-            boxShadow: "0 4px 12px rgba(13, 148, 136, 0.15)", outline: "none",
-            background: "#fff"
-          }}
-        />
-        {!searchTerm && (
-          <span style={{ position: "absolute", right: 14, top: 16, fontSize: "12px", color: "var(--color-text-secondary)" }}>
-            Press Enter to add
-          </span>
-        )}
+        <button
+          type="button"
+          className={`pos-items-filter-button${selectedCategory !== null || showOutOfStock ? " active" : ""}`}
+          onClick={() => setShowCategoryFilters((visible) => !visible)}
+          aria-label="Toggle category filters"
+          aria-expanded={showCategoryFilters}
+        >
+          <Filter size={18} />
+        </button>
+        <button
+          type="button"
+          className="btn-browse-all"
+          onClick={() => setShowProductModal(true)}
+        >
+          <Package size={18} />
+          <span>Browse All</span>
+        </button>
       </div>
 
-      {/* Quick Add Grid */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "12px" }}>
-          {currentItems.map((product) => {
-            const stock = product.currentStock || 0;
-            const outOfStock = stock <= 0 && mode === "sale";
-            return (
-              <div
-                key={product.productId}
-                onClick={() => {
-                  if (!outOfStock) {
+      {showCategoryFilters && (
+        <div className="category-chips">
+          <button
+            type="button"
+            className={`chip${selectedCategory === null ? " active" : ""}`}
+            onClick={() => setSelectedCategory(null)}
+            aria-pressed={selectedCategory === null}
+          >
+            All
+          </button>
+          {categories.map((category) => (
+            <button
+              type="button"
+              className={`chip${selectedCategory === category.categoryId ? " active" : ""}`}
+              key={category.categoryId}
+              onClick={() => setSelectedCategory(category.categoryId)}
+              aria-pressed={selectedCategory === category.categoryId}
+            >
+              {category.name}
+            </button>
+          ))}
+          <button
+            type="button"
+            className={`chip out-of-stock-toggle${showOutOfStock ? " active" : ""}`}
+            onClick={() => setShowOutOfStock((current) => !current)}
+            aria-pressed={showOutOfStock}
+          >
+            {showOutOfStock ? "Hide Out of Stock" : "Show Out of Stock"}
+          </button>
+        </div>
+      )}
+
+      <div className="pos-item-results">
+        <div className="product-grid">
+          {currentItems.length ? (
+            currentItems.map((product) => {
+              const stock = Number(product.currentStock) || 0;
+              const outOfStock = stock <= 0;
+
+              return (
+                <button
+                  type="button"
+                  key={product.productId}
+                  className={`product-card${outOfStock ? " out-of-stock" : ""}`}
+                  disabled={outOfStock}
+                  onClick={() => {
                     addProductToCart(product);
                     searchInputRef.current?.focus();
-                  }
-                }}
-                style={{
-                  background: outOfStock ? "#F9FAFB" : "#fff",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "var(--radius-md)", padding: "12px",
-                  cursor: outOfStock ? "not-allowed" : "pointer",
-                  transition: "var(--transition)",
-                  opacity: outOfStock ? 0.6 : 1,
-                  display: "flex", flexDirection: "column", justifyContent: "space-between"
-                }}
-                onMouseEnter={(e) => !outOfStock && (e.currentTarget.style.borderColor = "var(--color-primary)")}
-                onMouseLeave={(e) => !outOfStock && (e.currentTarget.style.borderColor = "var(--color-border)")}
+                  }}
+                >
+                  <span className="product-name">{product.name}</span>
+                  <span className="product-code">{product.code}</span>
+                  <span className="product-card-footer">
+                    <span className="product-price">
+                      {formatCurrency(product.retailPrice)}
+                    </span>
+                    <span className={`product-stock${outOfStock ? " zero" : ""}`}>
+                      {stock} left
+                    </span>
+                  </span>
+                </button>
+              );
+            })
+          ) : (
+            <EmptyState
+              title="No products match your filter."
+              compact
+              action={<button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={() => setShowProductModal(true)}
               >
-                <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--color-text-primary)", marginBottom: "4px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                  {product.name}
-                </div>
-                <div style={{ fontSize: "11px", color: "var(--color-text-secondary)", marginBottom: "8px" }}>
-                  {product.code}
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--color-primary)" }}>
-                    Rs {product.retailPrice}
-                  </span>
-                  <span style={{ fontSize: "11px", fontWeight: 600, color: outOfStock ? "var(--color-danger)" : stock < 10 ? "var(--color-warning)" : "var(--color-success)" }}>
-                    {stock} left
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+                Browse All Products
+              </button>}
+            />
+          )}
         </div>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: "8px", paddingTop: "12px", borderTop: "1px solid var(--color-border-light)" }}>
-          <button className="btn btn-outline btn-sm" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>Prev</button>
-          <span style={{ fontSize: "13px", display: "flex", alignItems: "center", fontWeight: 600 }}>Page {currentPage} of {totalPages}</span>
-          <button className="btn btn-outline btn-sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>Next</button>
+        <div className="pos-item-pagination">
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+          >
+            {t("pos.previous")}
+          </button>
+          <span>{t("pos.pageOf", { current: currentPage, total: totalPages })}</span>
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
+          >
+            {t("pos.next")}
+          </button>
         </div>
       )}
     </div>

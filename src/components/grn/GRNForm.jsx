@@ -1,7 +1,6 @@
 // components/grn/GRNForm.jsx
 import { useEffect, useState, useRef, useMemo } from "react";
 import { Save, X, ClipboardList } from "lucide-react";
-import { getNextGRNCode, saveGRNCode } from "../../services/indexdb/sequenceService";
 import { getPurchaseById } from "../../services/PurchaseDefinition/purchaseService";
 import ItemLookupModal from "../common/ItemLookupModal";
 import ConfirmDialog from "../common/ConfirmDialog";
@@ -13,6 +12,10 @@ import GRNPurchasePicker from "./GRNPurchasePicker";
 import GRNDetailsTable from "./GRNDetailsTable";
 import GRNComments from "./GRNComments";
 import "../../assets/styles/grn/GRNForm.css";
+
+// New GRNs show this placeholder. The server assigns the real number
+// (per shop) when the GRN is saved and ignores whatever the browser sends.
+const AUTO_GRN_NUMBER = "Auto";
 
 function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], products = [] }) {
   // =========================
@@ -28,8 +31,8 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
     details: [],
   });
 
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [entryMode, setEntryMode] = useState("product");
   const [selectedPurchase, setSelectedPurchase] = useState(null);
@@ -53,26 +56,7 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
   }, [products]);
 
   // =========================
-  // GENERATE GRN CODE
-  // =========================
-  const generateGRNCode = async () => {
-    setIsGenerating(true);
-    try {
-      const code = await getNextGRNCode();
-      setFormData((prev) => ({ ...prev, grnNumber: code }));
-    } catch (error) {
-      console.error("Error generating GRN code:", error);
-      const year = new Date().getFullYear().toString().slice(-2);
-      const random = Math.floor(1000 + Math.random() * 9000);
-      const fallbackCode = `GRN-${year}-${random}`;
-      setFormData((prev) => ({ ...prev, grnNumber: fallbackCode }));
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  // =========================
-  // LOAD GRN FOR EDIT
+  // LOAD GRN FOR EDIT / START NEW
   // =========================
   useEffect(() => {
     if (initialLoadDone.current) return;
@@ -102,9 +86,8 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
       setIsLoading(false);
       initialLoadDone.current = true;
     } else {
-      generateGRNCode();
       setFormData({
-        grnNumber: "",
+        grnNumber: AUTO_GRN_NUMBER,
         supplierId: "",
         purchaseId: null,
         grnDate: new Date().toISOString().split("T")[0],
@@ -227,10 +210,10 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
   // =========================
   const handleRefreshProducts = async () => {
     try {
-      const { refreshProductCache } = await import(
-        "../../services/ProductDefinition/productService"
+      const { refreshMasterData } = await import(
+        "../../services/masterDataSyncService"
       );
-      const freshProducts = await refreshProductCache();
+      const { products: freshProducts } = await refreshMasterData();
       setLocalProducts(freshProducts);
       return freshProducts;
     } catch (error) {
@@ -293,6 +276,8 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
   // =========================
   function handleChange(event) {
     const { name, value } = event.target;
+    // The GRN number is assigned by the server, so it is never edited here.
+    if (name === "grnNumber") return;
     setFormData((current) => ({ ...current, [name]: value }));
   }
 
@@ -308,7 +293,7 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
         notify.warning(`${product.name} is already added`);
         return;
       }
-  
+
       const newDetail = {
         grnDetailId: 0,
         productId: product.productId,
@@ -322,7 +307,7 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
         rowState: "Added",
         isVoid: false,
       };
-  
+
       setFormData((current) => ({
         ...current,
         details: [...current.details, newDetail],
@@ -330,10 +315,10 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
       detailsModified.current = true;
       setSelectedProductIds([...selectedProductIds, product.productId]);
     } else {
-      // ✅ FIX: actually remove the detail when deselected
       removeProductFromDetails(product.productId);
     }
   };
+
   // =========================
   // REMOVE PRODUCT FROM DETAILS (used by ItemLookupModal deselect)
   // =========================
@@ -347,6 +332,7 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
     setSelectedProductIds((prev) => prev.filter((id) => id !== productId));
     detailsModified.current = true;
   }
+
   // =========================
   // VOID / RESTORE
   // =========================
@@ -438,11 +424,8 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
   // =========================
   async function handleSubmit(event) {
     event.preventDefault();
+    if (isSaving) return; // prevent double-click saving the GRN twice
 
-    if (!formData.grnNumber) {
-      notify.warning("GRN Number is required");
-      return;
-    }
     if (!formData.supplierId) {
       notify.warning("Please select a supplier");
       return;
@@ -460,16 +443,9 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
       return;
     }
 
-    if (!grn) {
-      try {
-        await saveGRNCode();
-      } catch (error) {
-        console.error("Error saving GRN code sequence:", error);
-      }
-    }
-
     const cleanedData = {
-      grnNumber: formData.grnNumber,
+      // New GRNs send a placeholder; the server assigns the real number.
+      grnNumber: grn ? formData.grnNumber : AUTO_GRN_NUMBER,
       supplierId: Number(formData.supplierId),
       purchaseId: formData.purchaseId ? Number(formData.purchaseId) : null,
       grnDate: formData.grnDate,
@@ -507,6 +483,7 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
 
     cleanedData.details = [...cleanedData.details, ...deletedItems];
 
+    setIsSaving(true);
     try {
       await onSave(cleanedData);
 
@@ -523,6 +500,8 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
     } catch (error) {
       console.error("Error saving GRN:", error);
       notify.error("Failed to save GRN. Please try again");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -573,7 +552,7 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
   // =========================
   if (isLoading) {
     return (
-      <div className="grn-form-container">
+      <div className="grn-form-container form-page">
         <div className="form-loading">Loading GRN...</div>
       </div>
     );
@@ -583,16 +562,13 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
   // RENDER
   // =========================
   return (
-    <div className="grn-form-container">
+    <div className="grn-form-container form-page">
       {/* Header */}
       <div className="form-header">
         <h2>
           <ClipboardList size={20} strokeWidth={2} />
           {grn ? "Edit GRN" : "Add New GRN"}
         </h2>
-        {isGenerating && (
-          <span className="form-header-hint">Generating code...</span>
-        )}
       </div>
 
       <form onSubmit={handleSubmit} className="grn-form">
@@ -600,8 +576,8 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
         <GRNMasterSection
           formData={formData}
           isEditing={!!grn}
-          isGenerating={isGenerating}
-          onGenerateCode={generateGRNCode}
+          isGenerating={false}
+          onGenerateCode={() => {}}
           onChange={handleChange}
           onSupplierChange={handleSupplierChange}
           suppliers={suppliers}
@@ -665,9 +641,9 @@ function GRNForm({ grn, onClose, onSave, suppliers = [], purchases = [], product
             <X size={16} strokeWidth={2} />
             Cancel
           </button>
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" disabled={isSaving}>
             <Save size={16} strokeWidth={2} />
-            {grn ? "Update GRN" : "Save GRN"}
+            {isSaving ? "Saving..." : grn ? "Update GRN" : "Save GRN"}
           </button>
         </div>
       </form>

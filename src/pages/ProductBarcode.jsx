@@ -24,11 +24,13 @@ import {
 import ItemLookupModal from "../components/common/ItemLookupModal";
 import { useExport } from "../hooks/useExport";
 import { getProductsFromIndexedDB } from "../services/indexdb/productService";
-import { getProducts, refreshProductCache } from "../services/ProductDefinition/productService";
+import { getProducts } from "../services/ProductDefinition/productService";
+import { refreshMasterData } from "../services/masterDataSyncService";
 import BarcodePrint from "../components/barcode/BarcodePrint";
 import { notify } from "../utils/notify"; 
 import "../assets/styles/products/ProductBarcode.css";
 import "../assets/styles/barcode/BarcodePrint.css";
+import EmptyState from "../components/common/EmptyState";
 
 function ProductBarcode() {
   // =========================
@@ -140,7 +142,7 @@ function ProductBarcode() {
 
   const handleRefreshProducts = async () => {
     try {
-      const freshProducts = await refreshProductCache();
+      const { products: freshProducts } = await refreshMasterData();
       setLocalProducts(freshProducts);
       setProducts(freshProducts);
       setFilteredProducts(freshProducts);
@@ -713,11 +715,11 @@ function handlePrint() {
 
           {/* Empty State */}
           {selectedItems.length === 0 && !searchTerm && (
-            <div className="empty-selection">
-              <Package size={48} strokeWidth={1.25} />
-              <h3>No Items Selected</h3>
-              <p>Start typing an item code above or click "Lookup" to browse products.</p>
-            </div>
+            <EmptyState
+              icon={<Package size={48} strokeWidth={1.25} />}
+              title="No Items Selected"
+              description='Start typing an item code above or click "Lookup" to browse products.'
+            />
           )}
 
           <div className="step-actions">

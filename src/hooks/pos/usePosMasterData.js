@@ -1,14 +1,41 @@
 // hooks/pos/usePosMasterData.js
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getProductsFromIndexedDB } from "../../services/indexdb/productService";
 import { getCustomersFromIndexedDB } from "../../services/indexdb/customerService";
 import { getSalesPersonsFromIndexedDB } from "../../services/indexdb/salesPersonService";
 import {
-  getProducts,
-  refreshProductCache,
+  PRODUCTS_UPDATED_EVENT,
 } from "../../services/ProductDefinition/productService";
-import { getCustomers } from "../../services/CustomerDefinition/customerService";
-import { getSalesPersons } from "../../services/SalesPersonDefinition/salesPersonService";
+import {
+  MASTER_DATA_UPDATED_EVENT,
+  refreshMasterData,
+} from "../../services/masterDataSyncService";
+import { getAuthTenantId, getCurrentAuthTenantId } from "../../utils/authTenant";
+import { useAuth } from "../auth/useAuth";
+import { useGlobalLoader } from "../useGlobalLoader";
+
+function sortProducts(products = []) {
+  return [...products].sort((a, b) => {
+    const nameOrder = String(a.name || "").localeCompare(
+      String(b.name || ""),
+      undefined,
+      { sensitivity: "base" }
+    );
+    if (nameOrder !== 0) return nameOrder;
+
+    const codeOrder = String(a.code || "").localeCompare(
+      String(b.code || ""),
+      undefined,
+      { sensitivity: "base", numeric: true }
+    );
+    const idOrder = String(a.productId ?? "").localeCompare(
+      String(b.productId ?? ""),
+      undefined,
+      { numeric: true }
+    );
+    return codeOrder || idOrder;
+  });
+}
 
 /**
  * usePosMasterData
@@ -16,62 +43,126 @@ import { getSalesPersons } from "../../services/SalesPersonDefinition/salesPerso
  * Uses IndexedDB first with API fallback.
  */
 export function usePosMasterData() {
+  const { user } = useAuth();
+  const tenantId = getAuthTenantId(user);
+  const withGlobalLoader = useGlobalLoader();
   const [loading, setLoading] = useState(true);
   const [customers, setCustomers] = useState([]);
   const [salesPersons, setSalesPersons] = useState([]);
   const [products, setProducts] = useState([]);
   const [localProducts, setLocalProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const loadRequestId = useRef(0);
 
   const loadInitialData = useCallback(async () => {
+    const requestId = ++loadRequestId.current;
     setLoading(true);
+    setCustomers([]);
+    setSalesPersons([]);
+    setProducts([]);
+    setLocalProducts([]);
+    setFilteredProducts([]);
+
+    if (!tenantId) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      // 1. Products
-      let productsData = await getProductsFromIndexedDB();
-      if (!productsData || productsData.length === 0) {
-        productsData = await getProducts();
+      let [productsData, customersData, personsData] = await Promise.all([
+        getProductsFromIndexedDB(tenantId),
+        getCustomersFromIndexedDB(tenantId),
+        getSalesPersonsFromIndexedDB(tenantId),
+      ]);
+
+      if (
+        tenantId &&
+        navigator.onLine &&
+        (!productsData.length || !customersData.length || !personsData.length)
+      ) {
+        try {
+          const synced = await refreshMasterData(tenantId);
+          productsData = synced.products || productsData;
+          customersData = synced.customers || customersData;
+          personsData = synced.salesPersons || personsData;
+        } catch (error) {
+          console.error("[usePosMasterData] Initial master-data sync failed:", error);
+        }
       }
 
-      // 2. Customers
-      let customersData = await getCustomersFromIndexedDB();
-      if (!customersData || customersData.length === 0) {
-        customersData = await getCustomers();
+      if (
+        requestId !== loadRequestId.current ||
+        getCurrentAuthTenantId() !== tenantId
+      ) {
+        return;
       }
-
-      // 3. Sales Persons
-      let personsData = await getSalesPersonsFromIndexedDB();
-      if (!personsData || personsData.length === 0) {
-        personsData = await getSalesPersons();
-      }
-
+      const sortedProducts = sortProducts(productsData || []);
       setCustomers(customersData || []);
       setSalesPersons(personsData || []);
-      setProducts(productsData || []);
-      setLocalProducts(productsData || []);
-      setFilteredProducts(productsData || []);
+      setProducts(sortedProducts);
+      setLocalProducts(sortedProducts);
+      setFilteredProducts(sortedProducts);
     } catch (error) {
-      console.error("[usePosMasterData] Error loading data:", error);
+      if (requestId === loadRequestId.current) {
+        console.error("[usePosMasterData] Error loading data:", error);
+      }
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestId.current) setLoading(false);
     }
-  }, []);
+  }, [tenantId]);
 
-  const refreshProducts = useCallback(async () => {
-    try {
-      const fresh = await refreshProductCache();
-      setLocalProducts(fresh);
-      setProducts(fresh);
-      setFilteredProducts(fresh);
-      return fresh;
-    } catch (error) {
-      console.error("[usePosMasterData] Failed to refresh products:", error);
-      throw error;
-    }
-  }, []);
+  const refreshProducts = useCallback(
+    () => refreshMasterData(tenantId),
+    [tenantId]
+  );
 
   useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+    void withGlobalLoader(loadInitialData, "Loading point-of-sale data...");
+  }, [loadInitialData, withGlobalLoader]);
+
+  useEffect(() => {
+    const handleProductsUpdated = (event) => {
+      if (
+        event.detail?.tenantId !== tenantId ||
+        getCurrentAuthTenantId() !== tenantId
+      ) return;
+      const updatedProducts = event.detail?.products;
+      if (!Array.isArray(updatedProducts)) return;
+
+      const sortedProducts = sortProducts(updatedProducts);
+      setProducts(sortedProducts);
+      setLocalProducts(sortedProducts);
+      setFilteredProducts(sortedProducts);
+    };
+
+    const handleMasterDataUpdated = (event) => {
+      if (
+        event.detail?.tenantId !== tenantId ||
+        getCurrentAuthTenantId() !== tenantId
+      ) return;
+      const { entity, records } = event.detail || {};
+      if (!Array.isArray(records)) return;
+
+      if (entity === "customers") setCustomers(records);
+      if (entity === "salesPersons") setSalesPersons(records);
+      if (entity === "products") {
+        const sortedProducts = sortProducts(records);
+        setProducts(sortedProducts);
+        setLocalProducts(sortedProducts);
+        setFilteredProducts(sortedProducts);
+      }
+    };
+
+    window.addEventListener(PRODUCTS_UPDATED_EVENT, handleProductsUpdated);
+    window.addEventListener(MASTER_DATA_UPDATED_EVENT, handleMasterDataUpdated);
+    return () => {
+      window.removeEventListener(PRODUCTS_UPDATED_EVENT, handleProductsUpdated);
+      window.removeEventListener(
+        MASTER_DATA_UPDATED_EVENT,
+        handleMasterDataUpdated
+      );
+    };
+  }, [tenantId]);
 
   return {
     loading,

@@ -1,4 +1,5 @@
 // utils/exportUtils.js
+import { notify } from "./notify";
 
 export function printTable({
   tableSelector = '.table-wrapper',
@@ -10,13 +11,13 @@ export function printTable({
 }) {
   const tableWrapper = document.querySelector(tableSelector);
   if (!tableWrapper) {
-    alert('No table to print.');
+    notify.warning("No table to print.");
     return;
   }
 
   const tableEl = tableWrapper.querySelector('table');
   if (!tableEl) {
-    alert('No table found to print.');
+    notify.warning("No table found to print.");
     return;
   }
 
@@ -58,7 +59,7 @@ export function printTable({
 
   const printWindow = window.open('', '_blank', 'width=1200,height=800');
   if (!printWindow) {
-    alert('Please allow popups to print.');
+    notify.warning("Please allow popups to print.");
     return;
   }
 
@@ -211,7 +212,7 @@ export function exportToCSV({
   date = new Date(),
 }) {
   if (data.length === 0) {
-    alert('No data to export.');
+    notify.warning("No data to export.");
     return;
   }
 
@@ -251,7 +252,7 @@ export function exportToExcel({
   date = new Date(),
 }) {
   if (data.length === 0) {
-    alert('No data to export.');
+    notify.warning("No data to export.");
     return;
   }
 

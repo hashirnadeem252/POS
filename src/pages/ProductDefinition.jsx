@@ -357,7 +357,7 @@ function ProductDefinition() {
               onClick={() => setShowImportModal(true)}
               style={{ display: "flex", alignItems: "center", gap: "6px", height: "38px" }}
             >
-              <UploadCloud size={16} /> Import Excel
+              <UploadCloud size={16} /> Import
             </button>
             <MasterDataDropdown
               items={masterDataItems}
@@ -439,6 +439,7 @@ function ProductDefinition() {
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onImportSuccess={() => loadProducts(true)} // Force refresh from backend
+        existingProducts={products}
       />
     </div>
   );

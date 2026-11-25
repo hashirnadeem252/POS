@@ -1,17 +1,28 @@
 // components/sales/POSBottomActions.jsx
 import { useEffect } from "react";
 import { Pin, X, RotateCcw, CreditCard, Banknote, Clock, List } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function POSBottomActions({
   mode,
   saleData,
   setSaleData,
   resetAll,
+  onClear = resetAll,
+  cartItems = [],
   processTransaction,
   processReturn,
   handleHold,
   onOpenHeldSales,
 }) {
+  const { t } = useTranslation();
+  const canProcessReturn = cartItems.some(
+    (item) =>
+      !item.isVoid &&
+      ((item.itemType === "return" && Number(item.returnQty) > 0) ||
+        (item.itemType === "exchange" && Number(item.quantity) > 0))
+  );
+
   // Keyboard Shortcuts for Cashiers
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -30,90 +41,102 @@ function POSBottomActions({
   }, [mode, processTransaction]);
 
   return (
-    <div className="pos-bottom" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 24px", background: "#fff", borderTop: "1px solid var(--color-border)", boxShadow: "0 -4px 12px rgba(0,0,0,0.05)" }}>
-      
+    <div className="pos-bottom">
       {/* Comment / Notes */}
-      <div style={{ flex: 1, maxWidth: "400px" }}>
+      <div className="pos-bottom-notes">
         <input
           type="text"
           className="input"
-          placeholder="Add notes (optional)..."
+          placeholder={t("pos.notesPlaceholder")}
           value={saleData.comments}
           onChange={(e) => setSaleData((prev) => ({ ...prev, comments: e.target.value }))}
-          style={{ background: "var(--color-background)", border: "none" }}
         />
       </div>
 
       {/* Action Buttons */}
-      <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-        
+      <div className="pos-bottom-actions">
         {/* ✅ CLEANED: Held / hold / Clear Buttons */}
-        <div style={{ display: "flex", gap: "8px", marginRight: "16px" }}>
-          <button 
-            className="btn btn-outline" 
-            onClick={onOpenHeldSales} 
-            style={{ height: "52px", padding: "0 20px", borderColor: "#CBD5E1" }}
-            title="View Parked Sales"
-          >
-            <List size={18} /> Parked
-          </button>
+        <div className="pos-management-actions">
+          {mode === "sale" && (
+            <>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={onOpenHeldSales}
+                title={t("pos.parked")}
+              >
+                <List size={18} /> {t("pos.parked")}
+              </button>
 
-                   <button 
-            className="btn btn-outline" 
-            onClick={handleHold} 
-            style={{ height: "52px", padding: "0 20px" }}
-            title="Hold this sale for later"
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={handleHold}
+                title={t("pos.hold")}
+              >
+                <Pin size={18} /> {t("pos.hold")}
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            className="btn pos-clear-action"
+            onClick={onClear}
+            title={t("pos.clear")}
           >
-            <Pin size={18} /> Hold
+            <X size={18} /> {t("pos.clear")}
           </button>
-<button 
-  className="btn" 
-  onClick={resetAll} 
-  style={{ 
-    height: "52px", 
-    padding: "0 20px", 
-    background: "var(--color-danger)", // Solid red
-    borderColor: "var(--color-danger)",
-    color: "#fff" 
-  }}
-  title="Clear Cart"
->
-  <X size={18} /> Clear
-</button>
         </div>
 
         {/* Payment Buttons */}
-        {mode === "return" ? (
-          <button className="btn btn-warning" onClick={processReturn} style={{ padding: "0 32px", height: "52px", fontSize: "16px" }}>
-            <RotateCcw size={20} /> Process Return
-          </button>
-        ) : (
-          <>
+        <div className="pos-payment-actions">
+          {mode === "return" ? (
+            <button
+              type="button"
+              className="btn btn-warning pos-process-return"
+              onClick={processReturn}
+              disabled={!canProcessReturn}
+              title={
+                canProcessReturn
+                  ? "Process this return or exchange"
+                  : "Select return or exchange items first"
+              }
+            >
+              <RotateCcw size={20} />
+              {mode === "return" && cartItems.some(
+                (item) => !item.isVoid && item.itemType === "exchange"
+              )
+                ? "Process Return / Exchange"
+                : t("pos.returnProcess")}
+            </button>
+          ) : (
+            <>
             <button
               className="btn"
               onClick={() => processTransaction("Credit")}
-              style={{ height: "52px", padding: "0 24px", fontSize: "16px", background: "#F59E0B", borderColor: "#F59E0B", color: "#fff" }}
+              style={{ background: "#F59E0B", borderColor: "#F59E0B", color: "#fff" }}
             >
-              <Clock size={20} /> Udhaar
+              <Clock size={20} /> {t("pos.udhaar")}
             </button>
 
             <button
               className="btn btn-primary"
               onClick={() => processTransaction("Card/QR")}
-              style={{ height: "52px", padding: "0 24px", fontSize: "16px", background: "#1E293B", borderColor: "#1E293B" }}
+              style={{ background: "#1E293B", borderColor: "#1E293B" }}
             >
-              <CreditCard size={20} /> Digital
+              <CreditCard size={20} /> {t("pos.digital")}
             </button>
             
             <button
               className="btn btn-success"
               onClick={() => processTransaction("Cash")}
-              style={{ height: "52px", padding: "0 32px", fontSize: "18px", background: "var(--color-primary)", borderColor: "var(--color-primary)" }}
+              style={{ background: "var(--color-primary)", borderColor: "var(--color-primary)" }}
             >
-              <Banknote size={22} /> Pay Cash
+              <Banknote size={22} /> {t("pos.payCash")}
             </button>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

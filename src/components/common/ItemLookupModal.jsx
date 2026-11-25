@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import "../../assets/styles/common/ItemLookupModal.css";
 import { notify } from "../../utils/notify";
+import EmptyState from "./EmptyState";
 
 function ItemLookupModal({
   isOpen = false,
@@ -154,14 +155,10 @@ function ItemLookupModal({
         {!loading && (
           <div className="item-lookup-modal-body">
             {filteredItems.length === 0 ? (
-              <div className="item-lookup-modal-empty">
-                <div className="empty-icon">📭</div>
-                <p>
-                  {searchTerm
-                    ? `No results found for "${searchTerm}"`
-                    : emptyMessage}
-                </p>
-              </div>
+              <EmptyState
+                title={searchTerm ? `No results found for "${searchTerm}"` : emptyMessage}
+                compact
+              />
             ) : (
               <div className="table-wrapper">
                 <table>

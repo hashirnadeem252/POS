@@ -1,54 +1,30 @@
 // services/indexdb/salesPersonService.js
-import { STORES, getStore } from "./db.js";
+import { db, STORES } from "./db";
+import { masterDataCache } from "./masterDataCache";
 
-export async function saveSalesPersonsToIndexedDB(persons) {
-  const store = await getStore(STORES.SALES_PERSONS, "readwrite");
-  return new Promise((resolve, reject) => {
-    let savedCount = 0;
-    const transaction = store.transaction;
-
-    transaction.oncomplete = () => {
-      console.log(`✅ ${savedCount} sales persons saved to IndexedDB`);
-      resolve(savedCount);
-    };
-    transaction.onerror = () => reject(transaction.error);
-
-    const clearRequest = store.clear();
-    clearRequest.onsuccess = () => {
-      console.log("🗑️ Cleared existing sales persons from IndexedDB");
-      if (persons && persons.length > 0) {
-        persons.forEach((p) => {
-          const req = store.put(p);
-          req.onsuccess = () => savedCount++;
-          req.onerror = () => reject(req.error);
-        });
-      } else {
-        resolve(0);
-      }
-    };
-    clearRequest.onerror = () => reject(clearRequest.error);
-  });
+export async function saveSalesPersonsToIndexedDB(persons, tenantId) {
+  if (!tenantId) return 0;
+  const rows = persons || [];
+  await masterDataCache.replaceAll(STORES.SALES_PERSONS, rows, tenantId);
+  return rows.length;
 }
 
-export async function getSalesPersonsFromIndexedDB() {
-  const store = await getStore(STORES.SALES_PERSONS, "readonly");
-  return new Promise((resolve, reject) => {
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result || []);
-    request.onerror = () => reject(request.error);
-  });
+export async function getSalesPersonsFromIndexedDB(tenantId) {
+  if (!tenantId) return [];
+  return masterDataCache.getAll(STORES.SALES_PERSONS, tenantId);
 }
 
-export async function hasSalesPersonsInIndexedDB() {
-  const rows = await getSalesPersonsFromIndexedDB();
-  return rows && rows.length > 0;
+export async function hasSalesPersonsInIndexedDB(tenantId) {
+  if (!tenantId) return false;
+  const count = await db
+    .table(STORES.SALES_PERSONS)
+    .where("tenantId")
+    .equals(tenantId)
+    .count();
+  return count > 0;
 }
 
-export async function clearSalesPersonsFromIndexedDB() {
-  const store = await getStore(STORES.SALES_PERSONS, "readwrite");
-  return new Promise((resolve, reject) => {
-    const req = store.clear();
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(req.error);
-  });
+export async function clearSalesPersonsFromIndexedDB(tenantId) {
+  if (!tenantId) return;
+  await db.table(STORES.SALES_PERSONS).where("tenantId").equals(tenantId).delete();
 }

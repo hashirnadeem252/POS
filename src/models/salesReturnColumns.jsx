@@ -1,110 +1,86 @@
-// models/salesReturnColumns.jsx
+function formatMoney(value) {
+  const amount = Number(value);
+  return `PKR ${(Number.isFinite(amount) ? amount : 0).toLocaleString("en-PK", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function formatDate(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString();
+}
 
 export const salesReturnBaseColumns = [
-
   {
     key: "returnNumber",
     label: "Return #",
-    render: (row) => row.returnNumber || "-",
+    render: (row) => row.returnNumber || "—",
   },
   {
-    key: "saleId",
-    label: "Sale ID",
-    render: (row) => row.saleId || "-",
+    key: "invoiceNumber",
+    label: "Original Invoice",
+    render: (row) => row.invoiceNumber || "Manual return",
   },
   {
-    key: "customerId",
+    key: "customerName",
     label: "Customer",
-    render: (row) => {
-      // If you have customer name mapping, add it here
-      return row.customerId || "Walk-in";
-    },
+    render: (row) => row.customerName || "Walk-in",
   },
   {
     key: "returnDate",
-    label: "Return Date",
-    render: (row) => {
-      if (!row.returnDate) return "-";
-      return new Date(row.returnDate).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    },
+    label: "Return Date & Time",
+    render: (row) => formatDate(row.returnDate),
   },
   {
     key: "total",
-    label: "Total",
+    label: "Return Value",
     className: "numeric",
-    render: (row) => `PKR ${Number(row.total || 0).toFixed(2)}`,
+    render: (row) => formatMoney(row.total),
   },
   {
     key: "returnType",
     label: "Type",
-    render: (row) => {
-      const type = row.returnType || "Return";
-      const styles = {
-        Return: { background: '#f8d7da', color: '#721c24' },
-        Exchange: { background: '#d4edda', color: '#155724' },
-      };
-      const style = styles[type] || { background: '#e2e3e5', color: '#383d41' };
-      return (
-        <span style={{
-          padding: '2px 10px',
-          borderRadius: '12px',
-          fontSize: '11px',
-          fontWeight: 600,
-          ...style
-        }}>
-          {type}
-        </span>
-      );
-    },
-  },
-  {
-    key: "isManualReturn",
-    label: "Manual",
-    render: (row) => {
-      const isManual = row.isManualReturn === true || row.isManualReturn === 1;
-      return (
-        <span style={{
-          padding: '2px 10px',
-          borderRadius: '12px',
-          fontSize: '11px',
-          fontWeight: 600,
-          background: isManual ? '#fff3cd' : '#d4edda',
-          color: isManual ? '#856404' : '#155724'
-        }}>
-          {isManual ? "Manual" : "Invoice"}
-        </span>
-      );
-    },
+    render: (row) => (
+      <span
+        className={`return-type-badge ${
+          String(row.returnType || "Return").toLowerCase()
+        }`}
+      >
+        {row.returnType || "Return"}
+      </span>
+    ),
   },
 ];
 
 export const salesReturnExtraColumns = [
   {
+    key: "manual",
+    label: "Source",
+    render: (row) =>
+      row.isManualReturn === true || row.isManualReturn === 1
+        ? "Manual"
+        : "Invoice-linked",
+  },
+  {
+    key: "returnReason",
+    label: "Reason",
+    render: (row) => row.returnReason || "—",
+  },
+  {
     key: "comments",
     label: "Comments",
-    render: (row) => row.comments || "-",
+    render: (row) => row.comments || "—",
   },
   {
     key: "createdBy",
     label: "Created By",
-    render: (row) => row.createdBy || "-",
+    render: (row) => row.createdBy || "—",
   },
   {
     key: "creationDate",
-    label: "Created Date",
-    render: (row) => {
-      if (!row.creationDate) return "-";
-      return new Date(row.creationDate).toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    },
+    label: "Recorded At",
+    render: (row) => formatDate(row.creationDate),
   },
 ];

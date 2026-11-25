@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { X, Play, Trash2, Clock } from "lucide-react";
 import { getHeldSales, deleteSale } from "../../services/SaleDefinition/saleService";
 import { notify } from "../../utils/notify";
+import EmptyState from "../common/EmptyState";
 
 export default function HeldSalesModal({ isOpen, onClose, onResumeSale }) {
   const [heldSales, setHeldSales] = useState([]);
@@ -57,10 +58,11 @@ export default function HeldSalesModal({ isOpen, onClose, onResumeSale }) {
           {loading ? (
             <div style={{ textAlign: "center", padding: "40px", color: "#6B7A8F" }}>Loading...</div>
           ) : heldSales.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px", color: "#6B7A8F" }}>
-              <Clock size={40} style={{ opacity: 0.2, marginBottom: "16px" }} />
-              <p>No held sales found.</p>
-            </div>
+            <EmptyState
+              icon={<Clock size={36} style={{ opacity: 0.45 }} />}
+              title="No held sales found."
+              compact
+            />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {heldSales.map(sale => (

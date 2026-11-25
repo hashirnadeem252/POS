@@ -108,6 +108,45 @@
   color: var(--color-primary);
 }
 
+.notification-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.notification-mark-read {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.notification-mark-read:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+.notification-mark-read:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.notification-mark-read:focus-visible,
+.notification-refresh:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .notification-refresh {
   background: none;
   border: none;
@@ -280,6 +319,29 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.notification-item-stock.danger {
+  color: var(--color-danger);
+}
+
+.notification-item-stock.warning {
+  color: #a16207;
+}
+
+.low-stock-notification .notification-list li {
+  gap: 12px;
+}
+
+.low-stock-more {
+  display: block;
+  margin-top: 6px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  text-align: center;
 }
 
 .stock-value {
@@ -333,7 +395,60 @@
   margin: 0;
   font-size: 13px;
 }
+/* ========================================
+   SUBSCRIPTION ALERT
+   ======================================== */
 
+.subscription-alert {
+  border-left: 3px solid var(--color-warning);
+  background: rgba(245, 158, 11, 0.06);
+  gap: 10px;
+}
+
+.subscription-alert.subscription-expired {
+  border-left-color: var(--color-danger);
+  background: rgba(220, 38, 38, 0.06);
+}
+
+.subscription-status {
+  padding: 4px 9px;
+  border-radius: 20px;
+  background: rgba(245, 158, 11, 0.13);
+  color: #a16207;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.subscription-expired .subscription-status {
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--color-danger);
+}
+
+.subscription-message {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.subscription-alert .subscription-action {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.subscription-alert .subscription-action:hover {
+  border-color: var(--color-warning);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.subscription-expired .subscription-action {
+  border-color: rgba(220, 38, 38, 0.35);
+  color: var(--color-danger);
+}
+
+.subscription-expired .subscription-action:hover {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: var(--color-danger);
+}
 /* ========================================
    RESPONSIVE
    ======================================== */
@@ -341,5 +456,13 @@
   .notification-dropdown-menu {
     width: 320px;
     right: -50px;
+  }
+
+  .notification-mark-read {
+    padding: 6px;
+  }
+
+  .notification-mark-read span {
+    display: none;
   }
 }

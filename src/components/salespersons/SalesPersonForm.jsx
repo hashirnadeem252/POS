@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Save, X, UserCheck } from "lucide-react";
 import { getNextSalesPersonCode, saveSalesPersonCode } from "../../services/indexdb/sequenceService";
+import { requireCurrentAuthTenantId } from "../../utils/authTenant"; // ✅ Added
 import { notify } from "../../utils/notify";
 import FormInput from "../common/FormInput";
 import CodeInput from "../common/CodeInput";
@@ -29,7 +30,8 @@ function SalesPersonForm({ salesPerson, onClose, onSave }) {
   const generateSalesPersonCode = async () => {
     setIsGenerating(true);
     try {
-      const code = await getNextSalesPersonCode();
+      const tenantId = requireCurrentAuthTenantId(); // ✅ Get tenantId
+      const code = await getNextSalesPersonCode(tenantId); // ✅ Pass it
       setFormData((prev) => ({ ...prev, code }));
     } catch (error) {
       console.error("Error generating salesperson code:", error);
@@ -98,7 +100,8 @@ function SalesPersonForm({ salesPerson, onClose, onSave }) {
 
     if (!salesPerson) {
       try {
-        await saveSalesPersonCode();
+        const tenantId = requireCurrentAuthTenantId(); // ✅ Get tenantId
+        await saveSalesPersonCode(tenantId); // ✅ Pass it
       } catch (error) {
         console.error("Error saving salesperson code sequence:", error);
       }
@@ -117,7 +120,7 @@ function SalesPersonForm({ salesPerson, onClose, onSave }) {
   // =========================
   if (isLoading) {
     return (
-      <div className="salesperson-form-container">
+      <div className="salesperson-form-container form-page">
         <div className="form-loading">Loading sales person...</div>
       </div>
     );
@@ -127,7 +130,7 @@ function SalesPersonForm({ salesPerson, onClose, onSave }) {
   // RENDER
   // =========================
   return (
-    <div className="salesperson-form-container">
+    <div className="salesperson-form-container form-page">
       {/* Header */}
       <div className="form-header">
         <h2>

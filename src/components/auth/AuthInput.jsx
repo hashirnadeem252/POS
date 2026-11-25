@@ -38,6 +38,7 @@ export default function AuthInput({
           placeholder={placeholder}
           autoFocus={autoFocus}
           autoComplete={autoComplete}
+          dir={type === "email" || name === "username" ? "ltr" : undefined}
         />
       </div>
 

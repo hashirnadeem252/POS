@@ -1,6 +1,8 @@
 // hooks/pos/usePosSaleLoader.js
 import { useEffect } from "react";
 import { notify } from "../../utils/notify";
+import { getSaleById } from "../../services/SaleDefinition/saleService";
+import { getSalesReturnsBySaleId } from "../../services/SaleReturnDefinition/salesReturnService";
 
 /**
  * usePosSaleLoader
@@ -39,10 +41,14 @@ export function usePosSaleLoader({
   const getProductRetailPrice = (productId) =>
     products.find((p) => p.productId === productId)?.retailPrice || 0;
 
+  const getInvoiceNumber = (sale) =>
+    sale.invoiceNumber ?? sale.InvoiceNumber ?? sale.invoiceNo ?? sale.InvoiceNo ?? "";
+
   // ─────────────────────────────────────────
   // Load sale for EDIT
   // ─────────────────────────────────────────
   const loadSaleForEdit = (sale) => {
+    const invoiceNumber = getInvoiceNumber(sale);
     setIsEditing(true);
     setMode("sale");
     setFoundSale(null);
@@ -64,7 +70,7 @@ export function usePosSaleLoader({
 
     setSaleData({
       saleId: sale.saleId,
-      invoiceNumber: sale.invoiceNumber || "",
+      invoiceNumber,
       customerId: sale.customerId || "",
       salesPersonId: sale.salesPersonId || "",
       saleDate: sale.saleDate || new Date().toISOString(),
@@ -93,26 +99,65 @@ export function usePosSaleLoader({
     }
 
     setCartItems(items);
-    calculateTotals(items);
-    notify.success(`Sale ${sale.invoiceNumber} loaded for editing`);
+    calculateTotals(items, "sale");
+    notify.success(`Sale ${invoiceNumber} loaded for editing`);
   };
 
   // ─────────────────────────────────────────
   // Load sale for RETURN (creating a new return)
   // ─────────────────────────────────────────
-  const loadSaleForReturn = (sale) => {
+  const loadSaleForReturn = async (sale) => {
+    if (!sale?.saleId) {
+      throw new Error("This sale is missing its ID and cannot be returned.");
+    }
+
+    const [saleResponse, returnsResponse] = await Promise.all([
+      Array.isArray(sale.details) ? Promise.resolve(sale) : getSaleById(sale.saleId),
+      getSalesReturnsBySaleId(sale.saleId),
+    ]);
+    const completeSale = {
+      ...sale,
+      ...saleResponse,
+      details: saleResponse?.details ?? sale.details,
+    };
+    if (String(completeSale.status || "").toLowerCase() !== "completed") {
+      throw new Error("Only completed sales can be returned.");
+    }
+    if (!Array.isArray(completeSale.details)) {
+      throw new Error("The sale items could not be loaded.");
+    }
+    if (returnsResponse != null && !Array.isArray(returnsResponse)) {
+      throw new Error("The sale return history was not in the expected format.");
+    }
+
+    const returnedByProduct = new Map();
+    (returnsResponse || []).forEach((salesReturn) => {
+      (salesReturn.details || []).forEach((item) => {
+        const productId = Number(item.productId);
+        const quantity = Number(item.quantity) || 0;
+        if (Number.isFinite(productId) && quantity > 0) {
+          returnedByProduct.set(
+            productId,
+            (returnedByProduct.get(productId) || 0) + quantity
+          );
+        }
+      });
+    });
+
+    const invoiceNumber = getInvoiceNumber(completeSale);
     setMode("return");
-    setFoundSale(sale);
+    setFoundSale(completeSale);
     setReturnLoaded(true);
     setIsManualReturn(false);
     setIsEditing(false);
     setEditingReturnId?.(null); // ✅ Creating NEW return (not editing existing)
 
-    setSaleData({
-      saleId: sale.saleId,
-      invoiceNumber: `RET-${sale.invoiceNumber}`,
-      customerId: sale.customerId || "",
-      salesPersonId: sale.salesPersonId || "",
+    setSaleData((current) => ({
+      ...current,
+      saleId: completeSale.saleId,
+      invoiceNumber: `RET-${Date.now()}`,
+      customerId: completeSale.customerId || "",
+      salesPersonId: completeSale.salesPersonId || "",
       saleDate: new Date().toISOString(),
       subTotal: 0,
       discount: 0,
@@ -122,26 +167,58 @@ export function usePosSaleLoader({
       remainingAmount: 0,
       paymentMethod: "Cash",
       status: "Return",
-      comments: `Return for ${sale.invoiceNumber}`,
+      comments: `Return for ${invoiceNumber}`,
       details: [],
-    });
+    }));
 
-    if (sale.customerId) {
-      const customer = customers.find((c) => c.customerId === sale.customerId);
-      if (customer) setSelectedCustomer(customer);
-    }
+    const customer = completeSale.customerId
+      ? customers.find(
+          (item) => Number(item.customerId) === Number(completeSale.customerId)
+        )
+      : null;
+    setSelectedCustomer(customer || null);
 
-    if (sale.salesPersonId) {
+    if (completeSale.salesPersonId) {
       const person = salesPersons.find(
-        (p) => p.salesPersonId === sale.salesPersonId
+        (p) => Number(p.salesPersonId) === Number(completeSale.salesPersonId)
       );
-      if (person) setSelectedSalesPerson(person);
+      setSelectedSalesPerson(person || null);
+    } else {
+      setSelectedSalesPerson(null);
     }
 
-    if (sale.details && sale.details.length > 0) {
+    if (completeSale.details.length > 0) {
       // ✅ Load invoice items as SALE type (locked until user clicks badge)
-      const returnItems = sale.details.map((item) => {
+      const availableByProduct = new Map();
+      completeSale.details.forEach((item) => {
+        const productId = Number(item.productId);
+        availableByProduct.set(
+          productId,
+          (availableByProduct.get(productId) || 0) +
+            (Number(item.quantity) || 0)
+        );
+      });
+      returnedByProduct.forEach((quantity, productId) => {
+        availableByProduct.set(
+          productId,
+          Math.max(0, (availableByProduct.get(productId) || 0) - quantity)
+        );
+      });
+
+      const returnItems = completeSale.details.map((item) => {
         const qtyBought = Number(item.quantity) || 0;
+        const productId = Number(item.productId);
+        const availableQty = Math.min(
+          qtyBought,
+          availableByProduct.get(productId) || 0
+        );
+        availableByProduct.set(
+          productId,
+          Math.max(
+            0,
+            (availableByProduct.get(productId) || 0) - availableQty
+          )
+        );
         const price =
           Number(item.retailPrice) ||
           getProductRetailPrice(item.productId) ||
@@ -158,6 +235,7 @@ export function usePosSaleLoader({
           discount: item.discount || 0,
           tax: item.tax || 0,
           total: item.total || qtyBought * price,
+          originalDiscount: Number(item.discount) || 0,
 
           rowState: "Added",
           isVoid: false,
@@ -167,7 +245,7 @@ export function usePosSaleLoader({
           itemType: "sale",
 
           // ✅ Return ceiling info
-          maxReturn: qtyBought,
+          maxReturn: availableQty,
           returnQty: 0,
           originalQty: qtyBought,
           isFromOriginalInvoice: true,
@@ -175,10 +253,13 @@ export function usePosSaleLoader({
       });
 
       setCartItems(returnItems);
-      calculateTotals(returnItems);
+      calculateTotals(returnItems, "return");
+    } else {
+      setCartItems([]);
+      calculateTotals([], "return");
     }
 
-    notify.success(`Return loaded for ${sale.invoiceNumber}`);
+    notify.success(`Return loaded for ${invoiceNumber}`);
   };
 
   // ─────────────────────────────────────────
@@ -254,7 +335,7 @@ export function usePosSaleLoader({
       });
 
       setCartItems(items);
-      calculateTotals(items);
+      calculateTotals(items, "return");
     }
 
     notify.success(`Return ${returnData.returnNumber} loaded for editing`);
@@ -264,35 +345,36 @@ export function usePosSaleLoader({
   // Session restore
   // ─────────────────────────────────────────
   useEffect(() => {
-    const editJson = sessionStorage.getItem("editSaleData");
-    const returnJson = sessionStorage.getItem("returnSaleData");
-    const editReturnJson = sessionStorage.getItem("editReturnData");
+    const restoreSession = async () => {
+      const editJson = sessionStorage.getItem("editSaleData");
+      const returnJson = sessionStorage.getItem("returnSaleData");
+      const editReturnJson = sessionStorage.getItem("editReturnData");
 
-    if (editJson) {
-      try {
-        loadSaleForEdit(JSON.parse(editJson));
+      if (editJson) {
         sessionStorage.removeItem("editSaleData");
-      } catch (e) {
-        console.error("Error loading edit data:", e);
-        sessionStorage.removeItem("editSaleData");
-      }
-    } else if (returnJson) {
-      try {
-        loadSaleForReturn(JSON.parse(returnJson));
+        try {
+          loadSaleForEdit(JSON.parse(editJson));
+        } catch (error) {
+          console.error("Error loading edit data:", error);
+        }
+      } else if (returnJson) {
         sessionStorage.removeItem("returnSaleData");
-      } catch (e) {
-        console.error("Error loading return data:", e);
-        sessionStorage.removeItem("returnSaleData");
-      }
-    } else if (editReturnJson) {
-      try {
-        loadReturnForEdit(JSON.parse(editReturnJson));
+        try {
+          await loadSaleForReturn(JSON.parse(returnJson));
+        } catch (error) {
+          console.error("Error loading return data:", error);
+        }
+      } else if (editReturnJson) {
         sessionStorage.removeItem("editReturnData");
-      } catch (e) {
-        console.error("Error loading return edit data:", e);
-        sessionStorage.removeItem("editReturnData");
+        try {
+          loadReturnForEdit(JSON.parse(editReturnJson));
+        } catch (error) {
+          console.error("Error loading return edit data:", error);
+        }
       }
-    }
+    };
+
+    void restoreSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customers, salesPersons, products]);
 

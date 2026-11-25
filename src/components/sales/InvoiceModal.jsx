@@ -9,7 +9,7 @@ function InvoiceModal({ isOpen, onClose, saleData }) {
   const printRef = useRef();
   const [isPrinting, setIsPrinting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const { settings } = useSettings();
+  const { settings, formatCurrency } = useSettings();
 
   if (!isOpen || !saleData) return null;
 
@@ -21,13 +21,9 @@ function InvoiceModal({ isOpen, onClose, saleData }) {
     });
   };
 
-  const formatCurrency = (amount) => {
-    return `Rs ${Number(amount || 0).toFixed(2)}`;
-  };
-
-  const handleWhatsAppShare = () => {
+const handleWhatsAppShare = () => {
     if (!saleData) return;
-    let text = `*${settings.storeName || "Rova POS"}*\n`;
+    let text = `*${settings.storeName || "SaleKhata"}*\n`;
     if (settings.receiptHeader) text += `${settings.receiptHeader}\n`;
     if (settings.storeAddress) text += `${settings.storeAddress}\n`;
     if (settings.storePhone) text += `Ph: ${settings.storePhone}\n`;
@@ -64,12 +60,13 @@ function InvoiceModal({ isOpen, onClose, saleData }) {
     const opt = {
       margin: 0, filename: `${saleData.invoiceNumber}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm', format: [80, 297], orientation: 'portrait' }
+      html2canvas: { scale: 2, scrollY: 0 },
+       jsPDF: { unit: 'mm', format: [80, 500], orientation: 'portrait' },
+       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } 
     };
     html2pdf().set(opt).from(printRef.current).save().then(() => {
       setIsDownloading(false); notify.success("PDF Downloaded");
-    }).catch((err) => {
+    }).catch(() => {
       setIsDownloading(false); notify.error("Failed to download PDF");
     });
   };
@@ -85,9 +82,11 @@ function InvoiceModal({ isOpen, onClose, saleData }) {
       <!DOCTYPE html><html><head><title>Print</title>
           <style>
             @page { size: 80mm auto; margin: 0mm; }
-            body { font-family: 'Courier New', monospace; width: 76mm; margin: 0 auto; padding: 0; font-size: 11px; line-height: 1.3; }
-            .header h1 { font-size: 16px; margin: 0 0 4px 0; font-weight: bold; text-align: center; text-transform: uppercase; }
-            .header p { margin: 2px 0; font-size: 10px; text-align: center; }
+            body { font-family: 'Courier New', monospace; width: 76mm; margin: 0 auto; padding: 0; font-size: 11px; line-height: 1.3;   height: auto !important; 
+    min-height: 100%; }
+.header { display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; margin-bottom: 10px; }
+.header h1 { font-size: 18px; margin: 0 0 4px 0; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.1; }
+.header div { font-size: 11px; line-height: 1.3; margin-bottom: 2px; }
             .divider { border-top: 1px dashed #000; margin: 6px 0; }
             .item-header { display: grid; grid-template-columns: 2fr 0.5fr 0.8fr 1fr; gap: 4px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 2px; margin-bottom: 4px; text-transform: uppercase;}
             .item-row { display: grid; grid-template-columns: 2fr 0.5fr 0.8fr 1fr; gap: 4px; margin-bottom: 4px; }
@@ -117,22 +116,49 @@ function InvoiceModal({ isOpen, onClose, saleData }) {
           <button onClick={onClose} style={{ background: "#F1F5F9", border: "none", width: 32, height: 32, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748B" }}><X size={18} /></button>
         </div>
 
-        <div style={{ overflowY: "auto", overflowX: "hidden", padding: "24px 16px", display: "flex", justifyContent: "center", background: "#E2E8F0" }}>
-          <div ref={printRef} style={{ background: "#fff", padding: "20px 16px", width: "300px", minWidth: "300px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", fontFamily: "'Courier New', monospace", color: "#000", boxSizing: "border-box" }}>
+        <div style={{ overflowY: "auto", overflowX: "hidden", padding: "24px 16px", display: "flex", justifyContent: "center", alignItems: "flex-start", background: "#E2E8F0", flex: 1 }}>
+  <div ref={printRef} style={{ background: "#fff", padding: "20px 16px", width: "300px", minWidth: "300px", flexShrink: 0, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", fontFamily: "'Courier New', monospace", color: "#000", boxSizing: "border-box" }}>
             
-            <div className="header" style={{ textAlign: "center", marginBottom: "12px" }}>
-              {saleData.isReturn && <div style={{ border: "2px solid #000", padding: "4px", fontWeight: "bold", marginBottom: "12px", fontSize: "14px" }}>*** RETURN ***</div>}
+             {/* ✅ CLEAN, CENTERED RECEIPT HEADER */}
+            <div className="header" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", marginBottom: "12px", width: "100%" }}>
               
-              {/* ✅ CUSTOM HEADER FROM SETTINGS */}
-              {settings.receiptHeader && <p style={{ margin: "0 0 8px 0", fontSize: "12px", fontWeight: "bold" }}>{settings.receiptHeader}</p>}
+              {saleData.isReturn && (
+                <div style={{ border: "2px solid #000", padding: "4px", fontWeight: "bold", marginBottom: "12px", fontSize: "14px" }}>
+                  *** RETURN ***
+                </div>
+              )}
+              
+              {/* 1. Custom Header (if any) */}
+              {settings.receiptHeader && (
+                <div style={{ fontSize: "11px", fontWeight: "bold", marginBottom: "4px", textTransform: "uppercase" }}>
+                  {settings.receiptHeader.replace(/(\r\n|\n|\r)/gm, " ")}
+                </div>
+              )}
 
-              <h1 style={{ fontSize: "18px", margin: "0 0 4px 0", fontWeight: "bold", textTransform: "uppercase", wordBreak: "break-word" }}>{settings.storeName || "Rova POS"}</h1>
-              {settings.storeAddress && <p style={{ margin: "2px 0", fontSize: "11px", wordBreak: "break-word" }}>{settings.storeAddress}</p>}
-              {settings.storePhone && <p style={{ margin: "2px 0", fontSize: "11px" }}>Ph: {settings.storePhone}</p>}
+              {/* 2. Shop Name - Large & Bold */}
+              <h1 style={{ fontSize: "20px", margin: "0 0 4px 0", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.5px", lineHeight: "1.1" }}>
+                {settings.storeName || "SHOP NAME"}
+              </h1>
+
+              {/* 3. Store Address */}
+              {settings.storeAddress && (
+                <div style={{ fontSize: "11px", marginBottom: "2px", color: "#333", lineHeight: "1.3" }}>
+                  {settings.storeAddress.replace(/(\r\n|\n|\r)/gm, " ")}
+                </div>
+              )}
+
+              {/* 4. Contact Info */}
+              {settings.storePhone && (
+                <div style={{ fontSize: "11px", color: "#333" }}>
+                  Tel: {settings.storePhone}
+                </div>
+              )}
               
-              {/* ✅ TOGGLE TAX NUMBER */}
+              {/* 5. Tax Number */}
               {settings.showTaxNumberOnReceipt && settings.taxNumber && (
-                <p style={{ margin: "2px 0", fontSize: "11px" }}>NTN: {settings.taxNumber}</p>
+                <div style={{ fontSize: "11px", color: "#333", marginTop: "2px" }}>
+                  NTN: {settings.taxNumber}
+                </div>
               )}
             </div>
 
@@ -142,11 +168,16 @@ function InvoiceModal({ isOpen, onClose, saleData }) {
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
                 <span>Bill No:</span> <span style={{ fontWeight: "bold" }}>{saleData.invoiceNumber}</span>
               </div>
+              {saleData.isReturn && saleData.originalInvoiceNumber && (
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
+                  <span>Original Invoice:</span> <span style={{ fontWeight: "bold" }}>{saleData.originalInvoiceNumber}</span>
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
                 <span>Date:</span> <span>{formatDate(saleData.returnDate || saleData.saleDate)}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-                <span>Cashier:</span> <span>{saleData.salesPersonName || "Admin"}</span>
+                <span>SalesPerson:</span> <span>{saleData.salesPersonName || "Admin"}</span>
               </div>
             </div>
 
@@ -173,44 +204,79 @@ function InvoiceModal({ isOpen, onClose, saleData }) {
             <div style={{ borderTop: "1px solid #000", margin: "12px 0" }}></div>
 
             <div className="totals" style={{ fontSize: "11px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                <span>Sub Total:</span> <span>{formatCurrency(saleData.subTotal)}</span>
-              </div>
-              {saleData.discount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                  <span>Discount:</span> <span>- {formatCurrency(saleData.discount)}</span>
-                </div>
-              )}
-              {saleData.tax > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                  <span>Tax:</span> <span>{formatCurrency(saleData.tax)}</span>
-                </div>
-              )}
-              
-              <div className="grand-total" style={{ display: "flex", justifyContent: "space-between", fontSize: "15px", fontWeight: "bold", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "6px 0", margin: "8px 0" }}>
-                <span>NET TOTAL:</span> <span>{formatCurrency(saleData.total)}</span>
-              </div>
-
-              <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Payment Method:</span> <span style={{ fontWeight: "bold" }}>{saleData.paymentMethod || "Cash"}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Paid Amount:</span> <span>{formatCurrency(saleData.paidAmount)}</span>
-                </div>
-                {Number(saleData.remainingAmount) > 0 && (
-                  <div style={{ display: "flex", justifyContent: "space-between", color: "#c00", fontWeight: "bold", fontSize: "12px", marginTop: "4px" }}>
-                    <span>Balance (Udhaar):</span> <span>{formatCurrency(saleData.remainingAmount)}</span>
-                  </div>
-                )}
-              </div>
+        {saleData.isReturn ? (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+              <span>Return value:</span>
+              <span>{formatCurrency(saleData.returnTotal ?? saleData.total)}</span>
             </div>
+            {saleData.isExchange && (
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                <span>Exchange value:</span>
+                <span>{formatCurrency(saleData.exchangeTotal)}</span>
+              </div>
+            )}
+            {saleData.isExchange && (
+              <div className="grand-total" style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", fontWeight: "bold", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "6px 0", margin: "8px 0" }}>
+                <span>
+                  {saleData.difference > 0
+                    ? "AMOUNT DUE:"
+                    : saleData.difference < 0
+                    ? "REFUND DUE:"
+                    : "BALANCED:"}
+                </span>
+                <span>{formatCurrency(Math.abs(saleData.difference || 0))}</span>
+              </div>
+            )}
+            {!saleData.isExchange && (
+              <div className="grand-total" style={{ display: "flex", justifyContent: "space-between", fontSize: "15px", fontWeight: "bold", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "6px 0", margin: "8px 0" }}>
+                <span>REFUND VALUE:</span>
+                <span>{formatCurrency(saleData.returnTotal ?? saleData.total)}</span>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+          <span>Sub Total:</span> <span>{formatCurrency(saleData.subTotal)}</span>
+        </div>
+        {saleData.discount > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+            <span>Discount:</span> <span>- {formatCurrency(saleData.discount)}</span>
+          </div>
+        )}
+        {saleData.tax > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+            <span>Tax:</span> <span>{formatCurrency(saleData.tax)}</span>
+          </div>
+        )}
+            </>
+          )}
+              
+                   {!saleData.isReturn && <div className="grand-total" style={{ display: "flex", justifyContent: "space-between", fontSize: "15px", fontWeight: "bold", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "6px 0", margin: "8px 0" }}>
+            <span>NET TOTAL:</span> <span>{formatCurrency(saleData.total)}</span>
+          </div>}
+
+        <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span>Payment Method:</span> <span style={{ fontWeight: "bold" }}>{saleData.paymentMethod || "Cash"}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span>{saleData.isReturn ? "Refunded / due:" : "Paid Amount:"}</span> <span>{formatCurrency(saleData.isReturn ? saleData.paidAmount || saleData.remainingAmount : saleData.paidAmount)}</span>
+          </div>
+          {Number(saleData.remainingAmount) > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", color: "#c00", fontWeight: "bold", fontSize: "12px", marginTop: "4px" }}>
+              <span>Balance (Udhaar):</span> <span>{formatCurrency(saleData.remainingAmount)}</span>
+            </div>
+          )}
+        </div>
+      </div>
 
             <div style={{ borderTop: "1px dashed #000", margin: "12px 0" }}></div>
 
             <div className="footer" style={{ textAlign: "center", marginTop: "16px" }}>
               <p style={{ fontWeight: "bold", fontSize: "11px", margin: "0 0 4px 0" }}>{settings.receiptFooter || "Thank you for your business!"}</p>
-              <p style={{ margin: 0, fontSize: "10px", color: "#555" }}>Powered by Rova POS</p>
+              <p style={{ margin: 0, fontSize: "10px", color: "#555" }}>Powered by SaleKhata</p>
             </div>
           </div>
         </div>

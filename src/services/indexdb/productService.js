@@ -1,93 +1,29 @@
 // services/indexdb/productService.js
+import { db, STORES } from "./db";
+import { masterDataCache } from "./masterDataCache";
 
-import { STORES, getStore } from "./db.js";
-
-// =========================
-// SAVE PRODUCTS TO INDEXEDDB
-// =========================
-export async function saveProductsToIndexedDB(products) {
-    const store = await getStore(STORES.PRODUCTS, "readwrite");
-    
-    return new Promise((resolve, reject) => {
-        let savedCount = 0;
-        const transaction = store.transaction;
-        
-        transaction.oncomplete = () => {
-            console.log(`✅ ${savedCount} products saved to IndexedDB`);
-            resolve(savedCount);
-        };
-        
-        transaction.onerror = () => {
-            reject(transaction.error);
-        };
-        
-        // Clear existing data first to avoid duplicates
-        const clearRequest = store.clear();
-        clearRequest.onsuccess = () => {
-            console.log('🗑️ Cleared existing products from IndexedDB');
-            if (products && products.length > 0) {
-                products.forEach((product) => {
-                    const request = store.put(product);
-                    request.onsuccess = () => {
-                        savedCount++;
-                    };
-                    request.onerror = () => {
-                        reject(request.error);
-                    };
-                });
-            } else {
-                resolve(0);
-            }
-        };
-        clearRequest.onerror = () => {
-            reject(clearRequest.error);
-        };
-    });
+// Replace this tenant's products with fresh server data (atomic).
+export async function saveProductsToIndexedDB(products, tenantId) {
+  if (!tenantId) throw new Error("TenantId is required to save products.");
+  await masterDataCache.replaceAll(STORES.PRODUCTS, products || [], tenantId);
 }
 
-// =========================
-// GET ALL PRODUCTS FROM INDEXEDDB
-// =========================
-export async function getProductsFromIndexedDB() {
-    const store = await getStore(STORES.PRODUCTS, "readonly");
-    
-    return new Promise((resolve, reject) => {
-        const request = store.getAll();
-        
-        request.onsuccess = () => {
-            resolve(request.result || []);
-        };
-        
-        request.onerror = () => {
-            reject(request.error);
-        };
-    });
+export async function getProductsFromIndexedDB(tenantId) {
+  if (!tenantId) return [];
+  return masterDataCache.getAll(STORES.PRODUCTS, tenantId);
 }
 
-// =========================
-// CHECK IF PRODUCTS EXIST IN INDEXEDDB
-// =========================
-export async function hasProductsInIndexedDB() {
-    const products = await getProductsFromIndexedDB();
-    return products && products.length > 0;
+export async function hasProductsInIndexedDB(tenantId) {
+  if (!tenantId) return false;
+  const count = await db
+    .table(STORES.PRODUCTS)
+    .where("tenantId")
+    .equals(tenantId)
+    .count();
+  return count > 0;
 }
 
-// =========================
-// CLEAR PRODUCTS FROM INDEXEDDB
-// =========================
-export async function clearProductsFromIndexedDB() {
-    const store = await getStore(STORES.PRODUCTS, "readwrite");
-    
-    return new Promise((resolve, reject) => {
-        const request = store.clear();
-        
-        request.onsuccess = () => {
-            console.log("🗑️ Products cleared from IndexedDB");
-            resolve();
-        };
-        
-        request.onerror = () => {
-            reject(request.error);
-        };
-    });
+export async function clearProductsFromIndexedDB(tenantId) {
+  if (!tenantId) return;
+  await db.table(STORES.PRODUCTS).where("tenantId").equals(tenantId).delete();
 }

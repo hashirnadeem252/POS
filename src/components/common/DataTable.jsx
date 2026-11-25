@@ -1,6 +1,7 @@
 // components/common/DataTable.jsx
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Pagination from "./Pagination";
+import EmptyState from "./EmptyState";
 import "../../assets/styles/common/Table.css";
 
 function DataTable({
@@ -25,6 +26,10 @@ function DataTable({
   const totalItems = data.length;
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
 
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
   function handlePageChange(page) {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
@@ -38,10 +43,7 @@ function DataTable({
 
   if (data.length === 0) {
     return (
-      <div className="empty-state">
-        <div className="empty-icon">📭</div>
-        <h3>{emptyMessage}</h3>
-      </div>
+      <EmptyState title={emptyMessage} compact />
     );
   }
 
@@ -75,19 +77,30 @@ function DataTable({
                 {actions.length > 0 && (
                   <td>
                     <div className="action-buttons">
-                      {actions.map((action, idx) => (
-                        <button
-                          key={idx}
-                          className={`btn btn-sm ${action.className || "btn-outline"}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            action.onClick(row);
-                          }}
-                          title={action.title}
-                        >
-                          {action.icon}
-                        </button>
-                      ))}
+                      {actions.map((action, idx) => {
+                        const disabled =
+                          typeof action.isDisabled === "function"
+                            ? action.isDisabled(row)
+                            : Boolean(action.disabled);
+                        const title =
+                          action.getTitle?.(row) || action.title || "";
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            className={`btn btn-sm ${action.className || "btn-outline"}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              action.onClick(row);
+                            }}
+                            title={title}
+                            aria-label={title}
+                            disabled={disabled}
+                          >
+                            {action.icon}
+                          </button>
+                        );
+                      })}
                     </div>
                   </td>
                 )}

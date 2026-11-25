@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import { Plus, Save, Trash2, X } from "lucide-react";
+import FormInput from "../common/FormInput";
+import FormSelect from "../common/FormSelect";
+import FormTextarea from "../common/FormTextarea";
+import { notify } from "../../utils/notify";
+import "../../assets/styles/sales/SalesReturnForm.css";
+import EmptyState from "../common/EmptyState";
 
 function SalesReturnForm({
   salesReturn,
@@ -299,354 +306,207 @@ function SalesReturnForm({
   // RENDER
   // =========================
 
+  const saleOptions = sales.map((sale) => ({
+    value: sale.saleId,
+    label: `${sale.invoiceNumber} - ₹${sale.total}`,
+  }));
+  const productOptions = products.map((product) => ({
+    value: product.productId,
+    label: `${product.name} (Stock: ${product.currentStock})`,
+  }));
+  const reasonOptions = [
+    { value: "Damaged", label: "Damaged" },
+    { value: "Defective", label: "Defective" },
+    { value: "Wrong Item", label: "Wrong Item" },
+    { value: "Customer Request", label: "Customer Request" },
+    { value: "Other", label: "Other" },
+  ];
+  const activeDetails = formData.details.filter(
+    (detail) => detail.rowState !== "Deleted"
+  );
+
   return (
-    <div>
-      <h2>
-        {salesReturn
-          ? "Edit Sales Return"
-          : "Add Sales Return"}
-      </h2>
+    <div className="sales-return-form-page">
+      <header className="sales-return-form-header">
+        <h2>{salesReturn ? "Edit Sales Return" : "Add Sales Return"}</h2>
+      </header>
 
-      <form onSubmit={handleSubmit}>
-        {/* =========================
-            MASTER
-        ========================== */}
+      <form onSubmit={handleSubmit} className="sales-return-form">
+        <section className="sales-return-form-section">
+          <div className="sales-return-section-heading">
+            <h3>Return Information</h3>
+          </div>
 
-        <h3>
-          Return Information
-        </h3>
+          <div className="sales-return-form-grid">
+            <FormInput
+              label="Return Number"
+              name="returnNumber"
+              value={formData.returnNumber}
+              onChange={handleChange}
+              required
+            />
+            <FormSelect
+              label="Select Sale"
+              name="saleId"
+              value={formData.saleId}
+              onChange={handleSaleSelect}
+              options={saleOptions}
+              placeholder="Select a sale to return from"
+              required
+            />
+            <FormInput
+              label="Customer"
+              name="customerId"
+              type="number"
+              value={formData.customerId}
+              onChange={handleChange}
+              placeholder="Auto-filled from sale"
+            />
+            <FormInput
+              label="Return Date"
+              name="returnDate"
+              type="date"
+              value={formData.returnDate}
+              onChange={handleChange}
+              required
+            />
+            <FormTextarea
+              className="sales-return-comments"
+              label="Comments"
+              name="comments"
+              value={formData.comments}
+              onChange={handleChange}
+              rows={3}
+            />
+          </div>
+        </section>
 
-        <div>
-          <label>
-            Return Number
-          </label>
-          <br />
-          <input
-            name="returnNumber"
-            value={formData.returnNumber}
-            onChange={handleChange}
-            required
-          />
-        </div>
+        <section className="sales-return-form-section">
+          <div className="sales-return-section-heading">
+            <h3>Return Products</h3>
+            <button type="button" className="btn btn-outline" onClick={addDetail}>
+              <Plus size={16} />
+              Add Product
+            </button>
+          </div>
 
-        <br />
-
-        <div>
-          <label>
-            Select Sale
-          </label>
-          <br />
-          <select
-            name="saleId"
-            value={formData.saleId}
-            onChange={handleSaleSelect}
-            required
-          >
-            <option value="">
-              Select a sale to return from
-            </option>
-            {sales.map(s => (
-              <option
-                key={s.saleId}
-                value={s.saleId}
-              >
-                {s.invoiceNumber} - ₹{s.total}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <br />
-
-        <div>
-          <label>
-            Customer
-          </label>
-          <br />
-          <input
-            type="number"
-            name="customerId"
-            value={formData.customerId}
-            onChange={handleChange}
-            placeholder="Auto-filled from sale"
-          />
-        </div>
-
-        <br />
-
-        <div>
-          <label>
-            Return Date
-          </label>
-          <br />
-          <input
-            type="date"
-            name="returnDate"
-            value={formData.returnDate}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <br />
-
-        <div>
-          <label>
-            Comments
-          </label>
-          <br />
-          <textarea
-            name="comments"
-            value={formData.comments}
-            onChange={handleChange}
-          />
-        </div>
-
-        <br />
-
-        {/* =========================
-            DETAILS
-        ========================== */}
-
-        <h3>
-          Return Products
-        </h3>
-
-        <button
-          type="button"
-          onClick={addDetail}
-        >
-          Add Product
-        </button>
-
-        <br />
-        <br />
-
-        {formData.details
-          .filter(d => d.rowState !== "Deleted")
-          .map((detail, index) => (
-            <div
-              key={detail.salesReturnDetailId || `new-${index}`}
-              style={{
-                border: "1px solid gray",
-                padding: "10px",
-                marginBottom: "10px"
-              }}
-            >
-              <h4>
-                Product {index + 1}
-              </h4>
-
-              {/* PRODUCT */}
-              <label>
-                Product
-              </label>
-              <br />
-              <select
-                value={detail.productId}
-                onChange={(event) =>
-                  handleDetailChange(
-                    index,
-                    "productId",
-                    event.target.value
-                  )
-                }
-                required
-              >
-                <option value="">Select Product</option>
-                {products.map(p => (
-                  <option
-                    key={p.productId}
-                    value={p.productId}
-                  >
-                    {p.name} (Stock: {p.currentStock})
-                  </option>
-                ))}
-              </select>
-
-              <br />
-              <br />
-
-              {/* QUANTITY */}
-              <label>
-                Quantity to Return
-              </label>
-              <br />
-              <input
-                type="number"
-                step="0.01"
-                value={detail.quantity}
-                onChange={(event) =>
-                  handleDetailChange(
-                    index,
-                    "quantity",
-                    event.target.value
-                  )
-                }
-                required
+          <div className="sales-return-detail-list">
+            {activeDetails.length === 0 ? (
+              <EmptyState
+                title="No return products added yet"
+                description='Select "Add Product" to begin.'
+                compact
               />
-              {detail.maxQuantity > 0 && (
-                <span style={{ fontSize: "12px", color: "#666", marginLeft: "8px" }}>
-                  Max: {detail.maxQuantity}
-                </span>
-              )}
+            ) : (
+              activeDetails.map((detail, index) => (
+                <article
+                  className="sales-return-detail-card"
+                  key={detail.salesReturnDetailId || `new-${index}`}
+                >
+                  <div className="sales-return-detail-heading">
+                    <h4>Product {index + 1}</h4>
+                    <span className="sales-return-row-state">{detail.rowState}</span>
+                  </div>
 
-              <br />
-              <br />
+                  <div className="sales-return-detail-grid">
+                    <FormSelect
+                      label="Product"
+                      name={`product-${index}`}
+                      value={detail.productId}
+                      onChange={(event) =>
+                        handleDetailChange(index, "productId", event.target.value)
+                      }
+                      options={productOptions}
+                      placeholder="Select product"
+                      required
+                    />
+                    <FormInput
+                      label="Quantity to Return"
+                      name={`quantity-${index}`}
+                      type="number"
+                      step="0.01"
+                      value={detail.quantity}
+                      onChange={(event) =>
+                        handleDetailChange(index, "quantity", event.target.value)
+                      }
+                      helper={detail.maxQuantity > 0 ? `Maximum: ${detail.maxQuantity}` : null}
+                      required
+                    />
+                    <FormInput
+                      label="Retail Price"
+                      name={`retailPrice-${index}`}
+                      type="number"
+                      step="0.01"
+                      value={detail.retailPrice}
+                      onChange={(event) =>
+                        handleDetailChange(index, "retailPrice", event.target.value)
+                      }
+                      required
+                    />
+                    <FormInput
+                      label="Discount"
+                      name={`discount-${index}`}
+                      type="number"
+                      step="0.01"
+                      value={detail.discount}
+                      onChange={(event) =>
+                        handleDetailChange(index, "discount", event.target.value)
+                      }
+                    />
+                    <FormInput
+                      label="Tax"
+                      name={`tax-${index}`}
+                      type="number"
+                      step="0.01"
+                      value={detail.tax}
+                      onChange={(event) =>
+                        handleDetailChange(index, "tax", event.target.value)
+                      }
+                    />
+                    <FormSelect
+                      label="Reason for Return"
+                      name={`reason-${index}`}
+                      value={detail.reason || ""}
+                      onChange={(event) =>
+                        handleDetailChange(index, "reason", event.target.value)
+                      }
+                      options={reasonOptions}
+                      placeholder="Select reason"
+                    />
+                  </div>
 
-              {/* RETAIL PRICE */}
-              <label>
-                Retail Price
-              </label>
-              <br />
-              <input
-                type="number"
-                step="0.01"
-                value={detail.retailPrice}
-                onChange={(event) =>
-                  handleDetailChange(
-                    index,
-                    "retailPrice",
-                    event.target.value
-                  )
-                }
-                required
-              />
+                  <div className="sales-return-detail-footer">
+                    <strong>Line total: ₹{detail.total}</strong>
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      onClick={() => removeDetail(index)}
+                    >
+                      <Trash2 size={16} />
+                      Remove
+                    </button>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
 
-              <br />
-              <br />
+        <section className="sales-return-summary">
+          <span>Total Return Amount</span>
+          <strong>₹{formData.total}</strong>
+        </section>
 
-              {/* DISCOUNT */}
-              <label>
-                Discount
-              </label>
-              <br />
-              <input
-                type="number"
-                step="0.01"
-                value={detail.discount}
-                onChange={(event) =>
-                  handleDetailChange(
-                    index,
-                    "discount",
-                    event.target.value
-                  )
-                }
-              />
-
-              <br />
-              <br />
-
-              {/* TAX */}
-              <label>
-                Tax
-              </label>
-              <br />
-              <input
-                type="number"
-                step="0.01"
-                value={detail.tax}
-                onChange={(event) =>
-                  handleDetailChange(
-                    index,
-                    "tax",
-                    event.target.value
-                  )
-                }
-              />
-
-              <br />
-              <br />
-
-              {/* REASON */}
-              <label>
-                Reason for Return
-              </label>
-              <br />
-              <select
-                value={detail.reason || ""}
-                onChange={(event) =>
-                  handleDetailChange(
-                    index,
-                    "reason",
-                    event.target.value
-                  )
-                }
-              >
-                <option value="">Select Reason</option>
-                <option value="Damaged">Damaged</option>
-                <option value="Defective">Defective</option>
-                <option value="Wrong Item">Wrong Item</option>
-                <option value="Customer Request">Customer Request</option>
-                <option value="Other">Other</option>
-              </select>
-
-              <br />
-              <br />
-
-              {/* TOTAL */}
-              <strong>
-                Total: {detail.total}
-              </strong>
-
-              <br />
-              <br />
-
-              {/* ROW STATE */}
-              <div>
-                Row State:{" "}
-                <strong>
-                  {detail.rowState}
-                </strong>
-              </div>
-
-              <br />
-
-              {/* REMOVE */}
-              <button
-                type="button"
-                onClick={() =>
-                  removeDetail(index)
-                }
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-
-        <br />
-
-        {/* =========================
-            SUMMARY
-        ========================== */}
-
-        <h3>Summary</h3>
-
-        <div>
-          <strong>Total Return Amount:</strong> ₹{formData.total}
+        <div className="sales-return-form-actions">
+          <button type="button" className="btn btn-outline" onClick={onClose}>
+            <X size={16} />
+            Cancel
+          </button>
+          <button type="submit" className="btn btn-primary">
+            <Save size={16} />
+            Save Sales Return
+          </button>
         </div>
-
-        <br />
-
-        {/* =========================
-            SAVE / CANCEL
-        ========================== */}
-
-        <button
-          type="submit"
-        >
-          Save Sales Return
-        </button>
-
-        {" "}
-
-        <button
-          type="button"
-          onClick={onClose}
-        >
-          Cancel
-        </button>
-
       </form>
     </div>
   );

@@ -11,8 +11,11 @@ import {
   FileText,
 } from "lucide-react";
 import { getNextPurchaseCode, savePurchaseCode } from "../../services/indexdb/sequenceService";
+import { requireCurrentAuthTenantId } from "../../utils/authTenant";
 import { getProductsFromIndexedDB } from "../../services/indexdb/productService";
-import { getProducts, refreshProductCache } from "../../services/ProductDefinition/productService";
+import { getProducts } from "../../services/ProductDefinition/productService";
+import EmptyState from "../common/EmptyState";
+import { refreshMasterData } from "../../services/masterDataSyncService";
 import ItemLookupModal from "../common/ItemLookupModal";
 import FormInput from "../common/FormInput";
 import FormSelect from "../common/FormSelect";
@@ -25,9 +28,6 @@ import { notify } from "../../utils/notify";
 import "../../assets/styles/purchases/PurchaseForm.css";
 
 function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
-  // =========================
-  // STATE
-  // =========================
   const [formData, setFormData] = useState({
     purchaseNumber: "",
     supplierId: "",
@@ -50,9 +50,6 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
   const [localProducts, setLocalProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
 
-  // =========================
-  // LOAD PRODUCTS
-  // =========================
   useEffect(() => {
     loadProducts();
   }, []);
@@ -60,7 +57,8 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
   async function loadProducts() {
     setLoadingProducts(true);
     try {
-      let productData = await getProductsFromIndexedDB();
+      const tenantId = requireCurrentAuthTenantId();
+      let productData = await getProductsFromIndexedDB(tenantId);
       if (!productData || productData.length === 0) {
         const apiProducts = await getProducts();
         productData = apiProducts;
@@ -81,7 +79,7 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
 
   const handleRefreshProducts = async () => {
     try {
-      const freshProducts = await refreshProductCache();
+      const { products: freshProducts } = await refreshMasterData();
       setLocalProducts(freshProducts);
       return freshProducts;
     } catch (error) {
@@ -97,7 +95,9 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
   const generatePurchaseCode = async () => {
     setIsGenerating(true);
     try {
-      const code = await getNextPurchaseCode();
+      const tenantId = requireCurrentAuthTenantId();
+      const code = await getNextPurchaseCode(tenantId);
+      await savePurchaseCode(tenantId); // ✅ Save it immediately to prevent duplicates
       setFormData((prev) => ({ ...prev, purchaseNumber: code }));
     } catch (error) {
       console.error("Error generating purchase code:", error);
@@ -110,9 +110,6 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
     }
   };
 
-  // =========================
-  // LOAD PURCHASE FOR EDIT
-  // =========================
   useEffect(() => {
     if (purchase) {
       setFormData({
@@ -159,17 +156,11 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
     }
   }, [purchase]);
 
-  // =========================
-  // MASTER CHANGE
-  // =========================
   function handleChange(event) {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
-  // =========================
-  // ADD / REMOVE PRODUCT FROM MODAL
-  // =========================
   const handleProductSelectFromModal = (product, selected) => {
     if (selected) {
       const existing = formData.details.find(
@@ -200,22 +191,17 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
       }));
       setSelectedProductIds((prev) => [...prev, product.productId]);
     } else {
-      // ✅ FIX: actually remove the detail when deselected
       removeProductFromDetails(product.productId);
     }
   };
-  // =========================
-  // REMOVE PRODUCT FROM DETAILS (used by ItemLookupModal deselect)
-  // =========================
+
   function removeProductFromDetails(productId) {
     setFormData((prev) => ({
       ...prev,
       details: prev.details.filter((d) => d.productId !== productId),
     }));
   }
-  // =========================
-  // DETAIL CHANGE
-  // =========================
+
   function handleDetailChange(index, field, value) {
     setFormData((current) => {
       const updatedDetails = [...current.details];
@@ -229,9 +215,6 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
     });
   }
 
-  // =========================
-  // REMOVE DETAIL
-  // =========================
   function removeDetail(index) {
     setFormData((current) => {
       const updatedDetails = [...current.details];
@@ -248,9 +231,6 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
     });
   }
 
-  // =========================
-  // AUTO-CALCULATE TOTALS
-  // =========================
   useEffect(() => {
     let subTotal = 0;
     let discount = 0;
@@ -282,7 +262,6 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
       tax,
       total,
     }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.details]);
 
   // =========================
@@ -291,7 +270,6 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
   async function handleSubmit(event) {
     event.preventDefault();
   
-    // ── Required field checks ──
     if (!formData.purchaseNumber) {
       notify.warning("Purchase Number is required");
       return;
@@ -313,22 +291,13 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
       return;
     }
   
-    if (!purchase) {
-      try {
-        await savePurchaseCode();
-      } catch (error) {
-        console.error("Error saving purchase code sequence:", error);
-      }
-    }
-  
-    // ✅ Normalize: empty string → null
     const expectedDeliveryDate =
       formData.expectedDeliveryDate?.trim() ? formData.expectedDeliveryDate : null;
   
     const cleanedData = {
       ...formData,
       purchaseDate: formData.purchaseDate || null,
-      expectedDeliveryDate,               // null if empty
+      expectedDeliveryDate,
       supplierId: Number(formData.supplierId),
       subTotal: Number(formData.subTotal),
       discount: Number(formData.discount),
@@ -347,84 +316,66 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
   
     onSave(cleanedData);
   }
-  // =========================
-  // SELECT OPTIONS
-  // =========================
+  
   const supplierOptions = (suppliers || []).map((s) => ({
     value: s.supplierId,
     label: s.name || s.code || `Supplier ${s.supplierId}`,
   }));
 
-  const statusOptions = [
-    { value: "Pending", label: "Pending" },
-    { value: "Approved", label: "Approved" },
-    { value: "Received", label: "Received" },
-    { value: "Cancelled", label: "Cancelled" },
-  ];
-
   const isEditing = !!purchase;
 
-  // =========================
-  // LOADING
-  // =========================
   if (isLoading || loadingProducts) {
     return (
-      <div className="purchase-form-container">
+      <div className="purchase-form-container form-page">
         <div className="form-loading">Loading purchase...</div>
       </div>
     );
   }
 
-  // =========================
-  // RENDER
-  // =========================
   const activeDetails = formData.details.filter(
     (d) => d.rowState !== "Deleted"
   );
 
   return (
-    <div className="purchase-form-container">
+    <div className="purchase-form-container form-page">
       {/* Header */}
-  <div className="form-header">
-  <h2>
-    <Package size={20} strokeWidth={2} />
-    {isEditing ? "Edit Purchase Order" : "New Purchase Order"}
-  </h2>
-  <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-    {isEditing && (
-      <span className={`status-badge status-${formData.status?.toLowerCase()}`}
-        style={{
-          padding: "4px 12px",
-          borderRadius: "12px",
-          fontSize: "12px",
-          fontWeight: "600",
-          background: formData.status === "Received" ? "#DCFCE7" :
-                     formData.status === "Cancelled" ? "#FEE2E2" :
-                     formData.status === "Approved" ? "#DBEAFE" : "#FEF3C7",
-          color: formData.status === "Received" ? "#166534" :
-                 formData.status === "Cancelled" ? "#991B1B" :
-                 formData.status === "Approved" ? "#1E40AF" : "#92400E",
-        }}>
-        {formData.status || "Pending"}
-      </span>
-    )}
-    {isGenerating && (
-      <span className="form-header-hint">Generating code...</span>
-    )}
-  </div>
-</div>
+      <div className="form-header">
+        <h2>
+          <Package size={20} strokeWidth={2} />
+          {isEditing ? "Edit Purchase Order" : "New Purchase Order"}
+        </h2>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          {isEditing && (
+            <span className={`status-badge status-${formData.status?.toLowerCase()}`}
+              style={{
+                padding: "4px 12px",
+                borderRadius: "12px",
+                fontSize: "12px",
+                fontWeight: "600",
+                background: formData.status === "Received" ? "#DCFCE7" :
+                           formData.status === "Cancelled" ? "#FEE2E2" :
+                           formData.status === "Approved" ? "#DBEAFE" : "#FEF3C7",
+                color: formData.status === "Received" ? "#166534" :
+                       formData.status === "Cancelled" ? "#991B1B" :
+                       formData.status === "Approved" ? "#1E40AF" : "#92400E",
+              }}>
+              {formData.status || "Pending"}
+            </span>
+          )}
+          {isGenerating && (
+            <span className="form-header-hint">Generating code...</span>
+          )}
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="purchase-form">
-        {/* =====================
-            MASTER SECTION
-        ====================== */}
         <div className="purchase-section">
           <h3>
             <FileText size={16} strokeWidth={2} />
             Purchase Information
           </h3>
 
-                  <div className="form-row">
+          <div className="form-row">
             <CodeInput
               label="Purchase Number"
               name="purchaseNumber"
@@ -449,7 +400,7 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
               searchPlaceholder="Search suppliers..."
               required
             />
-          </div>  {/* ✅ ADD THIS — closes the first row */}
+          </div>
 
           <div className="form-row two-col">
             <FormDatePicker
@@ -469,11 +420,8 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
               helper="Optional — planned arrival date"
             />
           </div>
-        </div>  {/* ✅ Closes purchase-section */}
+        </div>
 
-        {/* =====================
-            DETAILS SECTION
-        ====================== */}
         <div className="purchase-section">
           <div className="purchase-section-header">
             <h3>
@@ -491,11 +439,12 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
           </div>
 
           {activeDetails.length === 0 ? (
-            <div className="purchase-empty">
-              <ShoppingCart size={32} strokeWidth={1.25} />
-              <p>No products added yet</p>
-              <span>Click "Browse Products" to add items to this order.</span>
-            </div>
+            <EmptyState
+              icon={<ShoppingCart size={36} strokeWidth={1.25} />}
+              title="No products added yet"
+              description='Click "Browse Products" to add items to this order.'
+              compact
+            />
           ) : (
             <div className="purchase-detail-list">
               {formData.details.map((detail, index) => {
@@ -514,9 +463,6 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
           )}
         </div>
 
-        {/* =====================
-            TOTALS SECTION
-        ====================== */}
         <div className="purchase-section">
           <h3>
             <Calculator size={16} strokeWidth={2} />
@@ -554,9 +500,6 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
           </div>
         </div>
 
-        {/* =====================
-            COMMENTS SECTION
-        ====================== */}
         <div className="purchase-section">
           <h3>
             <MessageSquare size={16} strokeWidth={2} />
@@ -573,9 +516,6 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
           />
         </div>
 
-        {/* =====================
-            ACTIONS
-        ====================== */}
         <div className="form-actions">
           <button type="button" className="btn btn-outline" onClick={onClose}>
             <X size={16} strokeWidth={2} />
@@ -588,7 +528,6 @@ function PurchaseForm({ purchase, onClose, onSave, suppliers = [] }) {
         </div>
       </form>
 
-      {/* Item lookup modal */}
       <ItemLookupModal
         isOpen={showProductModal}
         onClose={() => setShowProductModal(false)}

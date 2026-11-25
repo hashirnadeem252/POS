@@ -1,0 +1,169 @@
+/* src/assets/styles/common/TrialBanner.css */
+
+.trial-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+  animation: slideDown 0.4s ease-out;
+}
+
+.trial-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.trial-banner-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.trial-banner-text h4 {
+  margin: 0 0 2px 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.trial-banner-text p {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.trial-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.trial-banner-dismiss {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 8px;
+  transition: opacity 0.2s;
+}
+
+.trial-banner-dismiss:hover {
+  opacity: 1;
+}
+
+.trial-banner-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.trial-banner-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ===========================
+   VARIANTS
+   =========================== */
+
+/* Normal (Days 30 to 8) */
+.trial-banner-normal {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+  color: #1E293B;
+}
+.trial-banner-normal .trial-banner-icon {
+  background: #E2E8F0;
+  color: #475569;
+}
+.trial-banner-normal .trial-banner-btn {
+  background: #0F172A;
+  color: white;
+}
+
+/* Warning (Days 7 to 4) */
+.trial-banner-warning {
+  background: #FFFBEB;
+  border-color: #FDE68A;
+  color: #92400E;
+}
+.trial-banner-warning .trial-banner-icon {
+  background: #FEF3C7;
+  color: #D97706;
+}
+.trial-banner-warning .trial-banner-btn {
+  background: #D97706;
+  color: white;
+}
+
+/* Urgent (Days 3 to 1) */
+.trial-banner-urgent {
+  background: #FEF2F2;
+  border-color: #FECACA;
+  color: #991B1B;
+}
+.trial-banner-urgent .trial-banner-icon {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+.trial-banner-urgent .trial-banner-btn {
+  background: #DC2626;
+  color: white;
+}
+
+/* Expired */
+.trial-banner-expired {
+  background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+  border-color: #FCA5A5;
+  color: #7F1D1D;
+}
+.trial-banner-expired .trial-banner-icon {
+  background: #FECACA;
+  color: #B91C1C;
+}
+.trial-banner-expired .trial-banner-btn.btn-expired {
+  background: #B91C1C;
+  color: white;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .trial-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .trial-banner-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

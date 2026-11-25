@@ -5,10 +5,12 @@ import { ArrowRight, AlertCircle } from "lucide-react";
 import AuthLayout from "../components/auth/AuthLayout";
 import PasswordInput from "../components/auth/PasswordInput";
 import AuthButton from "../components/auth/AuthButton";
+import { useTranslation } from "react-i18next";
 
 const API_URL = "https://localhost:7219/api/Auth";
 
 export default function ResetPassword() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const token = params.get("token") || "";
@@ -24,8 +26,8 @@ export default function ResetPassword() {
   if (!token) {
     return (
       <AuthLayout
-        title="Invalid reset link"
-        subtitle="This password reset link is missing or malformed"
+        title={t("authMore.invalidReset")}
+        subtitle={t("authMore.invalidResetSubtitle")}
       >
         <div className="auth-form">
           <div
@@ -48,14 +50,14 @@ export default function ResetPassword() {
             />
             <div>
               <strong style={{ display: "block", marginBottom: 4 }}>
-                Link is invalid
+                {t("authMore.linkInvalid")}
               </strong>
-              Please request a new password reset link.
+              {t("authMore.requestNewLink")}
             </div>
           </div>
           <div className="auth-form-footer" style={{ marginTop: 8 }}>
             <Link to="/forgot-password" className="auth-link">
-              Request a new link
+              {t("authMore.requestLink")}
             </Link>
           </div>
         </div>
@@ -66,8 +68,8 @@ export default function ResetPassword() {
   if (done) {
     return (
       <AuthLayout
-        title="Password updated"
-        subtitle="Your password has been reset successfully"
+        title={t("authMore.passwordUpdated")}
+        subtitle={t("authMore.passwordUpdatedSubtitle")}
       >
         <div className="auth-form">
           <div
@@ -80,13 +82,13 @@ export default function ResetPassword() {
               lineHeight: 1.55,
             }}
           >
-            You can now sign in with your new password.
+            {t("authMore.signInNewPassword")}
           </div>
           <AuthButton
             type="button"
             onClick={() => navigate("/login", { replace: true })}
           >
-            Go to sign in
+            {t("authMore.goToSignIn")}
             <ArrowRight size={16} strokeWidth={2.5} />
           </AuthButton>
         </div>
@@ -96,10 +98,10 @@ export default function ResetPassword() {
 
   const validate = () => {
     const errs = {};
-    if (!password) errs.password = "Password is required";
-    else if (password.length < 6) errs.password = "Password must be at least 6 characters";
-    if (!confirm) errs.confirm = "Please confirm your password";
-    else if (password !== confirm) errs.confirm = "Passwords do not match";
+    if (!password) errs.password = t("authMore.passwordRequired");
+    else if (password.length < 6) errs.password = t("authMore.passwordMinLength");
+    if (!confirm) errs.confirm = t("authMore.confirmPasswordRequired");
+    else if (password !== confirm) errs.confirm = t("authMore.passwordsMismatch");
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -120,12 +122,12 @@ export default function ResetPassword() {
       const json = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(json?.message || "Failed to reset password");
+        throw new Error(json?.message || t("authMore.resetFailed"));
       }
 
       setDone(true);
     } catch (err) {
-      setFormError(err.message || "Failed to reset password");
+      setFormError(err.message || t("authMore.resetFailed"));
     } finally {
       setLoading(false);
     }
@@ -133,33 +135,33 @@ export default function ResetPassword() {
 
   return (
     <AuthLayout
-      title="Set a new password"
-      subtitle="Choose a strong password you haven't used before"
+      title={t("authMore.newPassword")}
+      subtitle={t("authMore.newPasswordSubtitle")}
     >
       <form onSubmit={handleSubmit} className="auth-form" noValidate>
         <PasswordInput
-          label="New password"
+          label={t("authMore.newPasswordLabel")}
           name="password"
           value={password}
           onChange={(e) => {
             setPassword(e.target.value);
             if (errors.password) setErrors((p) => ({ ...p, password: "" }));
           }}
-          placeholder="At least 6 characters"
+          placeholder={t("authMore.passwordLength")}
           error={errors.password}
           autoComplete="new-password"
           required
         />
 
         <PasswordInput
-          label="Confirm new password"
+          label={t("authMore.confirmNewPassword")}
           name="confirm"
           value={confirm}
           onChange={(e) => {
             setConfirm(e.target.value);
             if (errors.confirm) setErrors((p) => ({ ...p, confirm: "" }));
           }}
-          placeholder="Re-enter your password"
+          placeholder={t("auth.confirmPasswordPlaceholder")}
           error={errors.confirm}
           autoComplete="new-password"
           required
@@ -181,13 +183,13 @@ export default function ResetPassword() {
         )}
 
         <AuthButton loading={loading}>
-          Reset Password
+          {t("authMore.resetPassword")}
           <ArrowRight size={16} strokeWidth={2.5} />
         </AuthButton>
 
         <div className="auth-form-footer">
           <Link to="/login" className="auth-link">
-            Back to sign in
+            {t("authMore.backToSignIn")}
           </Link>
         </div>
       </form>

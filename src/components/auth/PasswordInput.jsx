@@ -1,6 +1,7 @@
 // components/auth/PasswordInput.jsx
 import { useState } from "react";
 import { Lock, Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function PasswordInput({
   label,
@@ -12,6 +13,7 @@ export default function PasswordInput({
   autoComplete = "current-password",
   required = false,
 }) {
+  const { t } = useTranslation();
   const [show, setShow] = useState(false);
 
   return (
@@ -37,6 +39,7 @@ export default function PasswordInput({
           onChange={onChange}
           placeholder={placeholder}
           autoComplete={autoComplete}
+          dir="ltr"
         />
 
         <button
@@ -44,7 +47,7 @@ export default function PasswordInput({
           className="auth-input-toggle"
           onClick={() => setShow((s) => !s)}
           tabIndex={-1}
-          aria-label={show ? "Hide password" : "Show password"}
+          aria-label={show ? t("common.hidePassword") : t("common.showPassword")}
         >
           {show ? <EyeOff size={16} strokeWidth={2} /> : <Eye size={16} strokeWidth={2} />}
         </button>

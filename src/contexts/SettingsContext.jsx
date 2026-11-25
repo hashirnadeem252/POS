@@ -1,11 +1,12 @@
 // contexts/SettingsContext.jsx
-import { createContext, useState, useEffect, useContext } from "react";
+import { createContext, useState, useEffect, useContext, useCallback } from "react";
 import { getSettings } from "../services/SettingsDefinition/settingsService";
+import { useAuth } from "../hooks/auth/useAuth"; // ✅ Import useAuth
 
 const SettingsContext = createContext(null);
 
 const DEFAULT_SETTINGS = {
-  storeName: "Rova",
+  storeName: "SaleKhata",
   storeAddress: null,
   storePhone: null,
   storeEmail: null,
@@ -18,27 +19,40 @@ const DEFAULT_SETTINGS = {
 };
 
 export function SettingsProvider({ children }) {
+  const { user } = useAuth(); // ✅ Get the user to watch for login/logout
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await getSettings();
-        if (data) {
-          setSettings((prev) => ({ ...prev, ...data }));
-        }
-      } catch (err) {
-        console.warn("Settings load failed, using defaults:", err.message);
-      } finally {
-        setLoading(false);
+  // ✅ Wrap in useCallback so it can be called from outside
+  const refreshSettings = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await getSettings();
+      if (data) {
+        setSettings((prev) => ({ ...prev, ...data }));
+      } else {
+        setSettings(DEFAULT_SETTINGS);
       }
-    };
-    load();
+    } catch (err) {
+      console.warn("Settings load failed, using defaults:", err.message);
+      setSettings(DEFAULT_SETTINGS);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  // ✅ Re-fetch whenever the user changes (login, logout, signup)
+  useEffect(() => {
+    refreshSettings();
+  }, [user, refreshSettings]);
+
+  const formatCurrency = (amount) => {
+    const symbol = settings.currencySymbol || "Rs";
+    return `${symbol} ${Number(amount || 0).toFixed(2)}`;
+  };
+
   return (
-    <SettingsContext.Provider value={{ settings, setSettings, loading }}>
+    <SettingsContext.Provider value={{ settings, setSettings, loading, formatCurrency, refreshSettings }}>
       {children}
     </SettingsContext.Provider>
   );

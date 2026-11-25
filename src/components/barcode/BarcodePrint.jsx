@@ -8,6 +8,7 @@ import {
   PackageX,
 } from "lucide-react";
 import "../../assets/styles/barcode/BarcodePrint.css";
+import EmptyState from "../common/EmptyState";
 
 /**
  * BarcodePrint Component
@@ -55,13 +56,11 @@ function BarcodePrint({ labels, template, onPrint, onBack }) {
         </div>
 
         <div className="print-preview-wrapper">
-          <div className="empty-preview">
-            <div className="empty-icon">
-              <PackageX size={48} strokeWidth={1.25} />
-            </div>
-            <h3>No Labels to Preview</h3>
-            <p>Please go back and select items to generate barcodes.</p>
-          </div>
+          <EmptyState
+            icon={<PackageX size={48} strokeWidth={1.25} />}
+            title="No Labels to Preview"
+            description="Please go back and select items to generate barcodes."
+          />
         </div>
       </div>
     );

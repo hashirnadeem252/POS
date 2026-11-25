@@ -12,45 +12,65 @@ export function usePosCart({
   const [cartItems, setCartItems] = useState([]);
   const [selectedProductIds, setSelectedProductIds] = useState([]);
 
-  // ✅ THE FIX: Recalculate totals and handle rounding properly
-  useEffect(() => {
-    const active = cartItems.filter((i) => !i.isVoid);
-
+  const calculateTotals = useCallback((items, transactionMode = mode) => {
+    const active = items.filter(
+      (item) =>
+        !item.isVoid &&
+        (transactionMode === "sale" || item.itemType !== "sale")
+    );
     let subTotal = 0;
     let discount = 0;
     let tax = 0;
 
     active.forEach((item) => {
       const qty = Number(item.quantity) || 0;
-      subTotal += qty * (item.retailPrice || 0);
-      discount += Number(item.discount) || 0;
-      tax += Number(item.tax) || 0;
-    });
+      const price = Number(item.retailPrice) || 0;
+      const itemDiscount = Number(item.discount) || 0;
+      const taxRate = Number(item.tax) || 0; // The tax percentage
+      const isReturn = item.itemType === "return";
 
-    // Round to 2 decimal places to prevent 0.0000001 bugs
-    const total = Number((subTotal - discount + tax).toFixed(2));
+      const lineTotal = isReturn
+        ? qty * price + itemDiscount
+        : qty * price - itemDiscount;
+      let lineTax = 0;
+      let lineNet = lineTotal;
 
-    setSaleData((prev) => {
-      const paid = Number(prev.paidAmount) || 0;
-      
-      // If paid is greater than or equal to total, remaining is 0
-      // If it's a card sale, remaining is 0
-      let remaining = 0;
-      if (paid > 0 && paid < total) {
-        remaining = Number((total - paid).toFixed(2));
+      if (taxRate > 0) {
+        lineTax = lineTotal - (lineTotal / (1 + (taxRate / 100)));
+        lineNet = lineTotal - lineTax;
       }
 
+      subTotal += lineNet;
+      discount += isReturn ? -itemDiscount : itemDiscount;
+      tax += lineTax;
+    });
+
+    subTotal = Number(subTotal.toFixed(2));
+    discount = Number(discount.toFixed(2));
+    tax = Number(tax.toFixed(2));
+    const total = Number((subTotal + tax).toFixed(2));
+
+    setSaleData((prev) => {
       return {
         ...prev,
         subTotal,
         discount,
         tax,
         total,
-        remainingAmount: remaining,
+        remainingAmount:
+          transactionMode === "sale"
+            ? Number(
+                Math.max(0, total - (Number(prev.paidAmount) || 0)).toFixed(2)
+              )
+            : 0,
         details: active,
       };
     });
-  }, [cartItems, setSaleData]);
+  }, [mode, setSaleData]);
+
+  useEffect(() => {
+    calculateTotals(cartItems);
+  }, [cartItems, calculateTotals]);
 
   // ─────────────────────────────────────────
   // Add product (sale or return mode)
@@ -119,21 +139,24 @@ export function usePosCart({
 
       if (mode === "return") {
         const isFromOriginalInvoice = foundSale
-          ? foundSale.details?.some((d) => d.productId === product.productId)
+          ? foundSale.details?.some(
+              (detail) =>
+                Number(detail.productId) === Number(product.productId)
+            )
           : false;
 
         const defaultAsReturn = isFromOriginalInvoice ? true : false;
-        const actualAsReturn =
-          asReturn !== undefined ? asReturn : defaultAsReturn;
+        const actualAsReturn = isManualReturn
+          ? true
+          : asReturn ?? defaultAsReturn;
 
         let maxReturn = 999;
         if (foundSale && isFromOriginalInvoice) {
           const originalItem = foundSale.details.find(
-            (d) => d.productId === product.productId
+            (detail) =>
+              Number(detail.productId) === Number(product.productId)
           );
-          maxReturn = originalItem?.quantity || 0;
-        } else if (isManualReturn) {
-          maxReturn = Number(product.currentStock) || 0;
+          maxReturn = originalItem?.quantity ?? 0;
         }
 
         setCartItems((prev) => {
@@ -146,16 +169,25 @@ export function usePosCart({
 
             if (actualAsReturn) {
               const newQty = (item.returnQty || 0) + 1;
-              if (newQty > (item.maxReturn || 999)) {
+              if (newQty > (item.maxReturn ?? 999)) {
                 notify.warning(`Maximum return quantity is ${item.maxReturn}`);
                 return prev;
               }
+              const originalQty =
+                Number(item.originalQty) || Number(item.maxReturn) || newQty;
+              const originalDiscount =
+                Number(item.originalDiscount ?? item.discount) || 0;
+              const proratedDiscount =
+                originalQty > 0
+                  ? (originalDiscount * newQty) / originalQty
+                  : 0;
 
               const newItem = {
                 ...item,
                 returnQty: newQty,
                 quantity: -newQty,
-                total: -newQty * item.retailPrice - (item.discount || 0),
+                discount: proratedDiscount,
+                total: -(newQty * item.retailPrice - proratedDiscount),
                 rowState: "Modified",
                 isReturn: true,
                 itemType: "return",
@@ -195,14 +227,19 @@ export function usePosCart({
           let isReturn = true;
           let qty = -1;
           let total = -(product.retailPrice || 0);
-          let maxQty = maxReturn;
+          let maxQty = isManualReturn ? 999 : maxReturn;
 
           if (foundSale && !isFromOriginalInvoice) {
+            const availableStock = Number(product.currentStock) || 0;
+            if (availableStock < 1) {
+              notify.warning(`${product.name} is out of stock`);
+              return prev;
+            }
             newItemType = "exchange";
             isReturn = false;
             qty = 1;
             total = product.retailPrice || 0;
-            maxQty = Number(product.currentStock) || 0;
+            maxQty = availableStock;
           }
 
           const newItem = {
@@ -261,17 +298,24 @@ export function usePosCart({
       let newQty = (item.returnQty || 0) + direction;
       if (newQty < 0) newQty = 0;
 
-      const maxQty = item.maxReturn || 999;
+      const maxQty = item.maxReturn ?? 999;
       if (newQty > maxQty) {
         notify.warning(`Maximum return quantity is ${maxQty}`);
         return prev;
       }
 
+      const originalQty =
+        Number(item.originalQty) || Number(item.maxReturn) || newQty;
+      const originalDiscount =
+        Number(item.originalDiscount ?? item.discount) || 0;
+      const proratedDiscount =
+        originalQty > 0 ? (originalDiscount * newQty) / originalQty : 0;
       const newItem = {
         ...item,
         returnQty: newQty,
         quantity: -newQty,
-        total: -newQty * item.retailPrice - (item.discount || 0),
+        discount: proratedDiscount,
+        total: -(newQty * item.retailPrice - proratedDiscount),
         rowState: newQty > 0 ? "Modified" : "Deleted",
         isReturn: true,
         itemType: "return",
@@ -375,13 +419,21 @@ export function usePosCart({
         notify.warning("Cannot edit a voided item");
         return prev;
       }
+      if (item.itemType === "return") return prev;
 
-      const disc = Number(value) || 0;
+      const requestedDiscount = Number(value) || 0;
+      const gross = Math.abs(
+        (Number(item.quantity) || 0) * (Number(item.retailPrice) || 0)
+      );
+      const disc = Math.min(Math.max(0, requestedDiscount), gross);
 
       const newItem = {
         ...item,
         discount: disc,
-        total: (item.quantity || 0) * (item.retailPrice || 0) - disc,
+        total:
+          item.itemType === "return"
+            ? (item.quantity || 0) * (item.retailPrice || 0) + disc
+            : (item.quantity || 0) * (item.retailPrice || 0) - disc,
         rowState: item.rowState === "Original" ? "Modified" : item.rowState,
       };
 
@@ -445,23 +497,43 @@ export function usePosCart({
       if (!item) return prev;
 
       const newType = item.itemType === "return" ? "exchange" : "return";
+      if (isManualReturn) {
+        notify.warning("Manual returns cannot be exchanged without an original invoice.");
+        return prev;
+      }
+      if (
+        newType === "return" &&
+        (!item.isFromOriginalInvoice || (item.maxReturn ?? 0) <= 0)
+      ) {
+        notify.warning("Only unreturned items from the original invoice can be returned.");
+        return prev;
+      }
       const qty = item.returnQty || 0;
+      const originalQty =
+        Number(item.originalQty) || Number(item.maxReturn) || qty;
+      const originalDiscount =
+        Number(item.originalDiscount ?? Math.abs(Number(item.discount))) || 0;
+      const proratedDiscount =
+        originalQty > 0 ? (originalDiscount * qty) / originalQty : 0;
 
       const newItem = {
         ...item,
         itemType: newType,
         isReturn: newType === "return",
+        discount: proratedDiscount,
         quantity: newType === "return" ? -qty : qty,
         total:
           (newType === "return" ? -qty : qty) * item.retailPrice -
-          (item.discount || 0),
+          (newType === "return"
+            ? -proratedDiscount
+            : proratedDiscount),
       };
 
       const updated = [...prev];
       updated[index] = newItem;
       return updated;
     });
-  }, []);
+  }, [isManualReturn]);
 
   // ─────────────────────────────────────────
   // Reset
@@ -474,6 +546,7 @@ export function usePosCart({
   return {
     cartItems,
     setCartItems,
+    calculateTotals,
     selectedProductIds,
     setSelectedProductIds,
     addProductToCart,

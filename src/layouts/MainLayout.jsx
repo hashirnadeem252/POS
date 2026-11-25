@@ -1,8 +1,20 @@
 // layouts/MainLayout.jsx
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useDispatch } from "react-redux";
 import "./MainLayout.css";
 import NotificationDropdown from "../components/common/NotificationDropdown";
+import BrandLogo from "../components/common/BrandLogo";
+import MasterDataSyncStatus from "../components/common/MasterDataSyncStatus";
+import PageBreadcrumbs from "../components/common/PageBreadcrumbs";
+import LanguageToggle from "../components/common/LanguageToggle";
+import EmptyState from "../components/common/EmptyState";
+import TrialBanner from "../components/common/TrialBanner";
+import MasterSyncModal from "../components/common/MasterSyncModal"; // ✅ Imported
+import {
+  getBreadcrumbsForPath,
+  setBreadcrumbs,
+} from "../store/breadcrumbSlice";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -18,33 +30,64 @@ import {
   User,
   ChevronRight,
   ChevronDown,
+  Menu,
+  X,
   LogOut,
   Settings as SettingsIcon,
-  ShieldCheck, // <-- Added for Staff/Users
-  Wallet, // <-- Added for Wallet
+  ShieldCheck,
+  Wallet,
   BarChart3,
+  RefreshCw, // ✅ Imported
 } from "lucide-react";
 import { useAuth } from "../hooks/auth/useAuth";
-import { useSettings } from "../contexts/SettingsContext";
 import { notify } from "../utils/notify";
+import { useTranslation } from "react-i18next";
 
 function MainLayout() {
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false); // ✅ Modal state
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user, logout } = useAuth();
-  const { settings } = useSettings();
-
+  
   const [expandedMenus, setExpandedMenus] = useState({
-    products: true,
+    products: false,
     configurations: false,
     sales: false,
     purchases: false,
   });
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredMenuItems, setFilteredMenuItems] = useState([]);
+  const [activeSearchIndex, setActiveSearchIndex] = useState(0);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const userMenuRef = useRef(null);
+  const menuSearchRef = useRef(null);
+
+  useEffect(() => {
+    dispatch(setBreadcrumbs(getBreadcrumbsForPath(location.pathname)));
+  }, [dispatch, location.pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setMobileNavOpen(false);
+    };
+    const handleResize = () => {
+      if (window.innerWidth > 768) setMobileNavOpen(false);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [mobileNavOpen]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -62,94 +105,94 @@ function MainLayout() {
     {
       path: "/dashboard",
       icon: LayoutDashboard,
-      label: "Dashboard",
+      label: t("sidebar.dashboard"),
       type: "link",
     },
     {
       icon: ShoppingBag,
-      label: "Sales",
+      label: t("pos.sales"),
       type: "submenu",
       key: "sales",
       children: [
         {
           path: "/pos",
           icon: ShoppingBag,
-          label: "Sale & Return",
+          label: t("sidebar.pos"),
         },
       ],
     },
     {
       icon: Package,
-      label: "Products",
+      label: t("sidebar.products"),
       type: "submenu",
       key: "products",
       children: [
         {
           path: "/products",
           icon: List,
-          label: "Product Definition",
+          label: t("sidebar.productDefinition"),
         },
         {
           path: "/products/barcode",
           icon: Barcode,
-          label: "Barcode Printing",
+          label: t("sidebar.barcode"),
         },
       ],
     },
     {
       icon: Store,
-      label: "Suppliers",
+      label: t("sidebar.suppliers"),
       type: "link",
       path: "/suppliers",
     },
     {
       icon: Users,
-      label: "Customers",
+      label: t("sidebar.customers"),
       type: "link",
       path: "/customers",
     },
     {
       icon: ShoppingCart,
-      label: "Purchase Orders",
+      label: t("sidebar.purchases"),
       type: "link",
       path: "/purchases",
     },
     {
       icon: ClipboardCheck,
-      label: "GRN",
+      label: t("sidebar.grn"),
       type: "link",
       path: "/grn",
     },
     {
       icon: UserCog,
-      label: "Sales Persons",
+      label: t("sidebar.salespersons"),
       type: "link",
       path: "/salespersons",
     },
     // ADMIN ONLY SECTION
     ...(isAdmin
-        ? [
-            {
-    icon: BarChart3, // Import this from lucide-react
-    label: "End of Day",
-    type: "link",
-    path: "/end-of-day",
-  },
+      ? [
           {
-            icon: Wallet, // ✅ New Icon
-            label: "Udhaar Khata",
+            icon: BarChart3,
+            label: t("sidebar.endOfDay"),
+            type: "link",
+            path: "/end-of-day",
+          },
+          {
+            icon: Wallet,
+            label: t("sidebar.khata"),
             type: "link",
             path: "/khata",
           },
           {
-            icon: ShieldCheck, // Using ShieldCheck for Staff
-            label: "Staff Management",
+            icon: ShieldCheck,
+            label: t("sidebar.users"),
             type: "link",
             path: "/users",
           },
           {
             icon: SettingsIcon,
-            label: "Store Settings",
+            label: t("sidebar.settings"),
             type: "link",
             path: "/settings",
           },
@@ -157,23 +200,17 @@ function MainLayout() {
       : []),
   ];
 
-  const allMenuItems = useMemo(() => {
-    return menuItems.flatMap((item) =>
-      item.type === "submenu" ? [item, ...item.children] : [item]
-    );
-  }, [isAdmin]);
-
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredMenuItems([]);
-      return;
-    }
-    const query = searchQuery.toLowerCase().trim();
-    const results = allMenuItems.filter((item) =>
-      item.label.toLowerCase().includes(query)
-    );
-    setFilteredMenuItems(results);
-  }, [searchQuery, allMenuItems]);
+  const allMenuItems = menuItems.flatMap((item) =>
+    item.type === "submenu"
+      ? item.children.map((child) => ({ ...child, category: item.label }))
+      : [item]
+  );
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredMenuItems = normalizedSearch
+    ? allMenuItems.filter((item) =>
+        `${item.label} ${item.category || ""}`.toLowerCase().includes(normalizedSearch)
+      )
+    : [];
 
   const toggleMenu = (menu) => {
     setExpandedMenus((prev) => ({
@@ -186,34 +223,51 @@ function MainLayout() {
   const isSubmenuActive = (children) =>
     children?.some((child) => location.pathname === child.path);
 
-  const currentTitle =
-    allMenuItems.find((item) => item.path === location.pathname)?.label ||
-    "Dashboard";
-
   const handleLogout = async () => {
     setUserMenuOpen(false);
     try {
       await logout();
-      notify.success("Signed out");
-    } catch {}
-    navigate("/login", { replace: true });
+      notify.success(t("sidebar.signedOut"));
+    } catch {
+      notify.error(t("sidebar.signOutFailed"));
+    }
+    navigate("/login", {
+      replace: true,
+      state: { accountSwitch: true },
+    });
   };
 
   const renderSearchResults = () => {
-    if (!searchQuery.trim() || filteredMenuItems.length === 0) return null;
+    if (!searchQuery.trim()) return null;
+
+    if (filteredMenuItems.length === 0) {
+      return <EmptyState title={t("sidebar.noMenuItems")} compact />;
+    }
+
     return (
-      <div className="search-results">
+      <div className="search-results" role="list">
         {filteredMenuItems.map((item, index) => {
           const Icon = item.icon;
+          const resultId = `sidebar-search-result-${index}`;
           return item.path ? (
             <Link
-              key={index}
+              key={item.path}
+              id={resultId}
               to={item.path}
-              className="search-result-item"
-              onClick={() => setSearchQuery("")}
+              className={`search-result-item ${index === activeSearchIndex ? "keyboard-active" : ""}`}
+              role="listitem"
+              onClick={() => {
+                setSearchQuery("");
+                setActiveSearchIndex(0);
+                setMobileNavOpen(false);
+              }}
+              onMouseEnter={() => setActiveSearchIndex(index)}
             >
               <Icon size={16} />
-              <span>{item.label}</span>
+              <span className="search-result-copy">
+                <span>{item.label}</span>
+                {item.category && <small>{item.category}</small>}
+              </span>
             </Link>
           ) : null;
         })}
@@ -232,30 +286,69 @@ function MainLayout() {
 
   return (
     <div className="main-layout">
-      <aside className="sidebar">
+      <aside
+        id="app-sidebar"
+        className={`sidebar ${mobileNavOpen ? "sidebar-open" : ""}`}
+      >
         <div className="sidebar-logo">
-          <span className="logo-mark">R</span>
-          <span className="logo-text" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {settings.storeName || "Rova"}
-          </span>
+          <BrandLogo variant="sidebar" />
+          <button
+            type="button"
+            className="sidebar-close"
+            onClick={() => setMobileNavOpen(false)}
+            aria-label={t("sidebar.closeMenu")}
+          >
+            <X size={20} />
+          </button>
         </div>
 
         <div className="sidebar-search">
           <Search size={15} />
           <input
+            ref={menuSearchRef}
             type="text"
-            placeholder="Search menu..."
+            placeholder={t("sidebar.menuSearch")}
             className="sidebar-search-input"
+            aria-label="Search navigation menu"
+            aria-controls="sidebar-menu-search-results"
+            aria-activedescendant={
+              filteredMenuItems[activeSearchIndex]
+                ? `sidebar-search-result-${activeSearchIndex}`
+                : undefined
+            }
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setActiveSearchIndex(0);
+            }}
             onKeyDown={(e) => {
-              if (e.key === "Escape") setSearchQuery("");
+              if (e.key === "Escape") {
+                setSearchQuery("");
+                setActiveSearchIndex(0);
+              } else if (e.key === "ArrowDown" && filteredMenuItems.length > 0) {
+                e.preventDefault();
+                setActiveSearchIndex((index) => (index + 1) % filteredMenuItems.length);
+              } else if (e.key === "ArrowUp" && filteredMenuItems.length > 0) {
+                e.preventDefault();
+                setActiveSearchIndex((index) => (index - 1 + filteredMenuItems.length) % filteredMenuItems.length);
+              } else if (e.key === "Enter" && filteredMenuItems[activeSearchIndex]) {
+                e.preventDefault();
+                navigate(filteredMenuItems[activeSearchIndex].path);
+                setSearchQuery("");
+                setActiveSearchIndex(0);
+                setMobileNavOpen(false);
+              }
             }}
           />
           {searchQuery && (
             <button
               className="search-clear"
-              onClick={() => setSearchQuery("")}
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setActiveSearchIndex(0);
+                menuSearchRef.current?.focus();
+              }}
               aria-label="Clear search"
             >
               ×
@@ -263,91 +356,127 @@ function MainLayout() {
           )}
         </div>
 
-        {renderSearchResults()}
-
         <nav className="sidebar-nav">
-          {menuItems.map((item, index) => {
-            if (item.type === "link") {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={index}
-                  to={item.path}
-                  className={`sidebar-link ${isActive(item.path) ? "active" : ""}`}
-                >
-                  <span className="link-icon">
-                    <Icon size={18} strokeWidth={1.75} />
-                  </span>
-                  <span className="link-label">{item.label}</span>
-                </Link>
-              );
-            }
-
-            if (item.type === "submenu") {
-              const Icon = item.icon;
-              const isExpanded = expandedMenus[item.key];
-              const hasActiveChild = isSubmenuActive(item.children);
-
-              const submenuItems = item.children || [];
-              const shouldHide =
-                searchQuery.trim() &&
-                !submenuItems.some((child) =>
-                  child.label.toLowerCase().includes(searchQuery.toLowerCase())
-                ) &&
-                !item.label.toLowerCase().includes(searchQuery.toLowerCase());
-
-              if (shouldHide) return null;
-
-              return (
-                <div key={index} className="submenu-container">
-                  <button
-                    type="button"
-                    className={`submenu-toggle ${hasActiveChild ? "active" : ""}`}
-                    onClick={() => toggleMenu(item.key)}
-                    aria-expanded={isExpanded}
+          {searchQuery.trim() ? (
+            <div id="sidebar-menu-search-results">{renderSearchResults()}</div>
+          ) : (
+            menuItems.map((item, index) => {
+              if (item.type === "link") {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={index}
+                    to={item.path}
+                    className={`sidebar-link ${isActive(item.path) ? "active" : ""}`}
+                    onClick={() => setMobileNavOpen(false)}
                   >
                     <span className="link-icon">
                       <Icon size={18} strokeWidth={1.75} />
                     </span>
                     <span className="link-label">{item.label}</span>
-                    <span className={`submenu-arrow ${isExpanded ? "expanded" : ""}`}>
-                      <ChevronRight size={14} />
-                    </span>
-                  </button>
+                  </Link>
+                );
+              }
 
-                  {isExpanded && (
-                    <div className="submenu-items">
-                      {item.children.map((child, childIndex) => {
-                        const ChildIcon = child.icon;
-                        return (
-                          <Link
-                            key={childIndex}
-                            to={child.path}
-                            className={`submenu-link ${isActive(child.path) ? "active" : ""}`}
-                            onClick={() => setSearchQuery("")}
-                          >
-                            <span className="submenu-icon">
-                              <ChildIcon size={15} strokeWidth={1.75} />
-                            </span>
-                            {child.label}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-            return null;
-          })}
+              if (item.type === "submenu") {
+                const Icon = item.icon;
+                const isExpanded = expandedMenus[item.key];
+                const hasActiveChild = isSubmenuActive(item.children);
+
+                return (
+                  <div key={index} className="submenu-container">
+                    <button
+                      type="button"
+                      className={`submenu-toggle ${hasActiveChild ? "active" : ""}`}
+                      onClick={() => toggleMenu(item.key)}
+                      aria-expanded={isExpanded}
+                    >
+                      <span className="link-icon">
+                        <Icon size={18} strokeWidth={1.75} />
+                      </span>
+                      <span className="link-label">{item.label}</span>
+                      <span className={`submenu-arrow ${isExpanded ? "expanded" : ""}`}>
+                        <ChevronRight size={14} />
+                      </span>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="submenu-items">
+                        {item.children.map((child, childIndex) => {
+                          const ChildIcon = child.icon;
+                          return (
+                            <Link
+                              key={childIndex}
+                              to={child.path}
+                              className={`submenu-link ${isActive(child.path) ? "active" : ""}`}
+                              onClick={() => {
+                                setSearchQuery("");
+                                setMobileNavOpen(false);
+                              }}
+                            >
+                              <span className="submenu-icon">
+                                <ChildIcon size={15} strokeWidth={1.75} />
+                              </span>
+                              {child.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            })
+          )}
         </nav>
       </aside>
+      {mobileNavOpen && (
+        <button
+          type="button"
+          className="sidebar-overlay"
+          onClick={() => setMobileNavOpen(false)}
+          aria-label={t("sidebar.closeMenu")}
+        />
+      )}
 
       <div className="main-content">
         <header className="header">
-          <h1 className="header-title">{currentTitle}</h1>
+          <button
+            type="button"
+            className="mobile-menu-toggle"
+            onClick={() => setMobileNavOpen(true)}
+            aria-label={t("sidebar.openMenu")}
+            aria-controls="app-sidebar"
+            aria-expanded={mobileNavOpen}
+          >
+            <Menu size={21} />
+          </button>
+          <PageBreadcrumbs />
 
           <div className="header-right">
+            <LanguageToggle />
+            
+            {/* ✅ THE SYNC BUTTON */}
+            <button 
+              className="header-sync-btn" 
+              onClick={() => setIsSyncModalOpen(true)}
+              title="Sync Master Data"
+              style={{ 
+                background: 'transparent', 
+                border: 'none', 
+                cursor: 'pointer', 
+                padding: '8px', 
+                color: 'var(--color-text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <RefreshCw size={18} />
+            </button>
+
+            <MasterDataSyncStatus />
             <NotificationDropdown />
 
             <div
@@ -383,7 +512,7 @@ function MainLayout() {
                     onClick={handleLogout}
                   >
                     <LogOut size={15} strokeWidth={2} />
-                    Logout
+                    {t("sidebar.logout")}
                   </button>
                 </div>
               )}
@@ -392,9 +521,16 @@ function MainLayout() {
         </header>
 
         <main className="content-area">
+          <TrialBanner />
           <Outlet />
         </main>
       </div>
+
+      {/* ✅ THE SYNC MODAL */}
+      <MasterSyncModal 
+        isOpen={isSyncModalOpen} 
+        onClose={() => setIsSyncModalOpen(false)} 
+      />
     </div>
   );
 }

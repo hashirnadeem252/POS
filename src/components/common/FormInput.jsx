@@ -1,6 +1,7 @@
 // components/common/FormInput.jsx
 import { forwardRef } from "react";
 import "../../assets/styles/common/FormInput.css";
+import InfoIcon from "./InfoIcon";
 
 /**
  * FormInput — themed text/number/email input with label & helper
@@ -16,6 +17,7 @@ const FormInput = forwardRef(function FormInput(
     required = false,
     disabled = false,
     helper = null,
+    info = null,
     error = null,
     min,
     max,
@@ -30,6 +32,7 @@ const FormInput = forwardRef(function FormInput(
       {label && (
         <label htmlFor={name} className="form-label">
           {label}
+          {info && <InfoIcon content={info} label={`${label} information`} />}
           {required && <span className="form-required">*</span>}
         </label>
       )}
@@ -49,6 +52,12 @@ const FormInput = forwardRef(function FormInput(
         max={max}
         step={step}
         autoFocus={autoFocus}
+        dir={
+          ["email", "tel", "url", "number", "password"].includes(type) ||
+          /code|barcode|username|invoice|reference|taxnumber/i.test(name)
+            ? "ltr"
+            : "auto"
+        }
       />
 
       {helper && !error && <span className="form-helper">{helper}</span>}

@@ -7,6 +7,7 @@ import {
   Edit,
   Trash2,
   DollarSign,
+  UploadCloud,
 } from "lucide-react";
 import DataTable from "../components/common/DataTable.jsx";
 import PageTabs from "../components/common/PageTabs.jsx";
@@ -15,6 +16,7 @@ import SearchToolbar from "../components/common/SearchToolbar.jsx";
 import useSearch from "../hooks/useSearch.js";
 import { useExport, exportConfigs } from "../hooks/useExport.js";
 import SupplierForm from "../components/suppliers/SupplierForm.jsx";
+import SpreadsheetImportModal from "../components/common/SpreadsheetImportModal.jsx";
 import PaySupplierModal from "../components/suppliers/PaySupplierModal.jsx"; // ✅ Added
 import {
   getSuppliers,
@@ -27,6 +29,8 @@ import {
   supplierExtraColumns,
 } from "../models/supplierColumns.jsx";
 import { getSupplierSearchFields } from "../models/supplierSearchFields.js";
+import { supplierImportFields } from "../utils/importTemplates.js";
+import { importRowsIndividually } from "../utils/spreadsheetImport.js";
 import { notify } from "../utils/notify"; 
 import "../assets/styles/suppliers/SupplierDefinition.css";
 import { getSupplierBalances } from "../services/SupplierDefinition/supplierService.js";
@@ -38,6 +42,7 @@ function SupplierDefinition() {
   const [activeTab, setActiveTab] = useState(0);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [showExtraColumns, setShowExtraColumns] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
   
   // ✅ NEW STATES for Payment Modal
@@ -120,6 +125,20 @@ function SupplierDefinition() {
       console.error("Error loading suppliers:", error);
       setSuppliers([]);
     }
+  }
+
+  async function importSupplierRows(rows) {
+    return importRowsIndividually(rows, createSupplier, (record) => ({
+      code: record.code,
+      name: record.name,
+      contactPerson: record.contactPerson || null,
+      phone: record.phone || null,
+      email: record.email || null,
+      address: record.address || null,
+      city: record.city || null,
+      taxNumber: record.taxNumber || null,
+      openingBalance: 0,
+    }));
   }
 
   // =========================
@@ -262,6 +281,15 @@ function SupplierDefinition() {
         addButtonLabel="Add Supplier"
         addButtonIcon={Plus}
         flushTop={true}
+        extraActions={
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => setShowImportModal(true)}
+          >
+            <UploadCloud size={16} /> Import
+          </button>
+        }
       >
         <div>
           <SearchToolbar
@@ -322,6 +350,16 @@ function SupplierDefinition() {
         }}
         supplier={selectedSupplierForPayment}
         onSuccess={loadSuppliers}
+      />
+      <SpreadsheetImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={importSupplierRows}
+        onImportSuccess={loadSuppliers}
+        title="suppliers"
+        templateName="supplier_import_template.csv"
+        fields={supplierImportFields}
+        existingRecords={suppliers}
       />
     </div>
   );

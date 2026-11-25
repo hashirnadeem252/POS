@@ -1,34 +1,8 @@
 // App.jsx
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect, useState, lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { Toaster } from "react-hot-toast";
-
-import { openDB } from "./services/indexdb/db";
-
-// Product services
-import { getProducts } from "./services/ProductDefinition/productService";
-import {
-  saveProductsToIndexedDB,
-  hasProductsInIndexedDB,
-} from "./services/indexdb/productService";
-import {
-  startAutoRefresh,
-  stopAutoRefresh,
-} from "./services/ProductDefinition/productService";
-
-// Customer services
-import { getCustomers } from "./services/CustomerDefinition/customerService";
-import {
-  saveCustomersToIndexedDB,
-  hasCustomersInIndexedDB,
-} from "./services/indexdb/customerService";
-
-// Sales Person services
-import { getSalesPersons } from "./services/SalesPersonDefinition/salesPersonService";
-import {
-  saveSalesPersonsToIndexedDB,
-  hasSalesPersonsInIndexedDB,
-} from "./services/indexdb/salesPersonService";
+import { useAuth } from "./hooks/auth/useAuth"; // ✅ Added
 
 import MainLayout from "./layouts/MainLayout";
 
@@ -36,11 +10,13 @@ import MainLayout from "./layouts/MainLayout";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import ProtectedRoute from "./components/common/ProtectedRoute";
+import OfflineSyncManager from "./components/common/OfflineSyncManager";
+import MasterDataSyncManager from "./components/common/MasterDataSyncManager";
+import DataLoader, { GlobalDataLoader } from "./components/common/DataLoader";
 
 // =========================
 // LAZY IMPORTS — Code Splitting
 // =========================
-// Only loaded when the user navigates to that route
 const Welcome = lazy(() => import("./pages/Welcome"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
@@ -63,140 +39,28 @@ const EndOfDay = lazy(() => import("./pages/EndOfDay"));
 
 // ✅ Full-page loading fallback
 function PageLoader() {
+  return <DataLoader fullPage message="Loading page..." size="large" />;
+}
+
+// ✅ NEW: Wrapper that waits for Auth to be ready before mounting sync managers
+function AuthenticatedSyncManagers() {
+  const { isAuthenticated, loading } = useAuth();
+
+  // Do nothing until the auth context has restored the session
+  if (loading || !isAuthenticated) return null;
+
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-        fontFamily: "system-ui, sans-serif",
-        color: "#6B7A8F",
-      }}
-    >
-      <div style={{ textAlign: "center" }}>
-        <div
-          style={{
-            width: "40px",
-            height: "40px",
-            border: "3px solid #EAEDF2",
-            borderTopColor: "#0D9488",
-            borderRadius: "50%",
-            margin: "0 auto 16px",
-            animation: "spin 0.8s linear infinite",
-          }}
-        />
-        <p style={{ margin: 0, fontWeight: 500 }}>Loading...</p>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    </div>
+    <>
+      <OfflineSyncManager />
+      <MasterDataSyncManager />
+    </>
   );
 }
 
 function App() {
-  const [dbReady, setDbReady] = useState(false);
-
-  // =========================
-  // INIT DB
-  // =========================
-  useEffect(() => {
-    const initDB = async () => {
-      try {
-        await openDB();
-        console.log("📁 IndexedDB initialized successfully");
-        setDbReady(true);
-      } catch (error) {
-        console.error("❌ IndexedDB initialization failed:", error);
-        setDbReady(true);
-      }
-    };
-    initDB();
-  }, []);
-
-  // =========================
-  // SYNC MASTER DATA + AUTO REFRESH
-  // =========================
-  useEffect(() => {
-    if (!dbReady) return;
-
-    const syncMasterData = async () => {
-      try {
-        const hasProducts = await hasProductsInIndexedDB();
-        if (!hasProducts) {
-          console.log("📡 Syncing products to IndexedDB...");
-          const products = await getProducts();
-          await saveProductsToIndexedDB(products);
-          console.log("✅ Products synced to IndexedDB");
-        }
-
-        const hasCustomers = await hasCustomersInIndexedDB();
-        if (!hasCustomers) {
-          console.log("📡 Syncing customers to IndexedDB...");
-          const customers = await getCustomers();
-          await saveCustomersToIndexedDB(customers);
-          console.log("✅ Customers synced to IndexedDB");
-        }
-
-        const hasSalesPersons = await hasSalesPersonsInIndexedDB();
-        if (!hasSalesPersons) {
-          console.log("📡 Syncing sales persons to IndexedDB...");
-          const persons = await getSalesPersons();
-          await saveSalesPersonsToIndexedDB(persons);
-          console.log("✅ Sales persons synced to IndexedDB");
-        }
-      } catch (error) {
-        console.error("❌ Error syncing master data:", error);
-      }
-    };
-
-    syncMasterData();
-
-    try {
-      startAutoRefresh(5);
-      console.log("🔄 Auto-refresh started (every 5 minutes)");
-    } catch (error) {
-      console.error("❌ Failed to start auto-refresh:", error);
-    }
-
-    return () => {
-      try {
-        stopAutoRefresh();
-        console.log("⏹️ Auto-refresh stopped");
-      } catch (error) {
-        console.error("❌ Failed to stop auto-refresh:", error);
-      }
-    };
-  }, [dbReady]);
-
-  // =========================
-  // LOADING SCREEN
-  // =========================
-  if (!dbReady) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          fontFamily: "system-ui, sans-serif",
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "40px", marginBottom: "16px" }}>🗄️</div>
-          <h2>Initializing Database...</h2>
-          <p style={{ color: "#6B7A8F" }}>Please wait</p>
-        </div>
-      </div>
-    );
-  }
-
-  // =========================
-  // RENDER
-  // =========================
   return (
-    <SettingsProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <SettingsProvider>
         <Toaster
           position="top-right"
           reverseOrder={false}
@@ -240,7 +104,11 @@ function App() {
         />
 
         <BrowserRouter>
-          {/* ✅ Suspense wraps ALL routes — shows the loader while lazy pages download */}
+          <GlobalDataLoader />
+          
+          {/* ✅ Only run background sync when authenticated */}
+          <AuthenticatedSyncManagers />
+
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* PUBLIC ROUTES */}
@@ -285,8 +153,8 @@ function App() {
             </Routes>
           </Suspense>
         </BrowserRouter>
-      </AuthProvider>
-    </SettingsProvider>
+      </SettingsProvider>
+    </AuthProvider>
   );
 }
 

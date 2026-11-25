@@ -1,6 +1,7 @@
 // components/common/EntityLookupModal.jsx
 import { useState, useEffect, useMemo } from "react";
 import "../../assets/styles/common/ItemLookupModal.css";
+import EmptyState from "./EmptyState";
 
 /**
  * EntityLookupModal — single-select picker for entities
@@ -138,14 +139,10 @@ function EntityLookupModal({
         {!loading && (
           <div className="item-lookup-modal-body">
             {filteredItems.length === 0 ? (
-              <div className="item-lookup-modal-empty">
-                <div className="empty-icon">📭</div>
-                <p>
-                  {searchTerm
-                    ? `No results found for "${searchTerm}"`
-                    : emptyMessage}
-                </p>
-              </div>
+              <EmptyState
+                title={searchTerm ? `No results found for "${searchTerm}"` : emptyMessage}
+                compact
+              />
             ) : (
               <div className="table-wrapper">
                 <table>

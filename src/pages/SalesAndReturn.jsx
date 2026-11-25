@@ -1,13 +1,19 @@
 // pages/SalesAndReturn.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Package, UserRound } from "lucide-react";
 
 import { notify } from "../utils/notify";
 import { getSales } from "../services/SaleDefinition/saleService";
 import { usePosMasterData } from "../hooks/pos/usePosMasterData";
+import { STORES } from "../services/indexdb/db";
+import { masterDataCache } from "../services/indexdb/masterDataCache";
+import { MASTER_DATA_UPDATED_EVENT } from "../services/masterDataSyncService";
 import { usePosCart } from "../hooks/pos/usePosCart";
 import { usePosSaleLoader } from "../hooks/pos/usePosSaleLoader";
 import { usePosTransaction } from "../hooks/pos/usePosTransaction";
+import { useAuth } from "../hooks/auth/useAuth";
+import { getAuthTenantId, getCurrentAuthTenantId } from "../utils/authTenant";
 
 import POSHeader from "../components/sales/POSHeader";
 import POSReturnSearch from "../components/sales/POSReturnSearch";
@@ -16,31 +22,35 @@ import POSItemsTab from "../components/sales/POSItemsTab";
 import POSCart from "../components/sales/POSCart";
 import POSBottomActions from "../components/sales/POSBottomActions";
 import POSModals from "../components/sales/POSModals";
-import LowStockAlert from "../components/common/LowStockAlert";
-import LoadingSpinner from "../components/common/LoadingSpinner";
 import SalesReturnSearch from "../components/sales/SalesReturnSearch";
 import SalesSearch from "../components/sales/SalesSearch";
 import ConfirmDialog from "../components/common/ConfirmDialog";
 import HeldSalesModal from "../components/sales/HeldSalesModal";
 import QuickAddModal from "../components/sales/QuickAddModal";
+import { useTranslation } from "react-i18next";
 
 import "../assets/styles/sales/SalesAndReturn.css";
 
+function getInvoiceNumber(sale) {
+  return sale.invoiceNumber ?? sale.InvoiceNumber ?? sale.invoiceNo ?? sale.InvoiceNo ?? "";
+}
+
 function SalesAndReturn() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const tenantId = getAuthTenantId(user);
 
   // ═══════════════════════════════════════════════
   // MASTER DATA
   // ═══════════════════════════════════════════════
   const {
-    loading,
     customers,
     salesPersons,
     products,
     localProducts,
     filteredProducts,
     setFilteredProducts,
-    refreshProducts,
   } = usePosMasterData();
 
   // ═══════════════════════════════════════════════
@@ -59,6 +69,14 @@ function SalesAndReturn() {
   const [allSales, setAllSales] = useState([]);
 
   const [showProductModal, setShowProductModal] = useState(false);
+  const [cachedCategories, setCachedCategories] = useState({
+    tenantId: null,
+    records: [],
+  });
+  const categories =
+    cachedCategories.tenantId === tenantId ? cachedCategories.records : [];
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [showOutOfStock, setShowOutOfStock] = useState(false);
  const [showPaymentModal, setShowPaymentModal] = useState(null);
   const [showCreditModal, setShowCreditModal] = useState(false);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -79,6 +97,41 @@ function SalesAndReturn() {
   const [itemsPerPage] = useState(12);
   const [searchTerm, setSearchTerm] = useState("");
   const [quickAddType, setQuickAddType] = useState(null); // "customer" | "salesperson" | null
+
+ useEffect(() => {
+  let isMounted = true;
+
+  const loadCachedCategories = async () => {
+    if (!tenantId) return;
+    try {
+      const cached = await masterDataCache.getAll(STORES.CATEGORIES, tenantId);
+      if (
+        isMounted &&
+        getCurrentAuthTenantId() === tenantId
+      ) {
+        setCachedCategories({ tenantId, records: cached });
+      }
+    } catch (error) {
+      console.error("[SalesAndReturn] Error loading cached categories:", error);
+    }
+  };
+
+  const handleUpdate = (event) => {
+    if (
+      event.detail?.entity === "categories" &&
+      event.detail?.tenantId === tenantId
+    ) {
+      void loadCachedCategories();
+    }
+  };
+
+  void loadCachedCategories();
+  window.addEventListener(MASTER_DATA_UPDATED_EVENT, handleUpdate);
+  return () => {
+    isMounted = false;
+    window.removeEventListener(MASTER_DATA_UPDATED_EVENT, handleUpdate);
+  };
+}, [tenantId]);
 
   const [confirmState, setConfirmState] = useState({
     isOpen: false,
@@ -138,6 +191,8 @@ function SalesAndReturn() {
     resetCart();
     setSearchTerm("");
     setFilteredProducts(localProducts);
+    setSelectedCategory(null);
+    setShowOutOfStock(false);
     setSelectedCustomer(null);
     setSelectedSalesPerson(null);
     setCustomerSearch("");
@@ -153,7 +208,7 @@ function SalesAndReturn() {
 
     setSaleData({
       saleId: null,
-      invoiceNumber: `INV-${Date.now()}`,
+      invoiceNumber: "",
       customerId: "",
       salesPersonId: "",
       saleDate: new Date().toISOString(),
@@ -174,11 +229,106 @@ function SalesAndReturn() {
     sessionStorage.removeItem("editReturnData");
   };
 
+  const clearReturnTransaction = () => {
+    resetCart();
+    setFoundSale(null);
+    setReturnLoaded(false);
+    setIsManualReturn(false);
+    setIsEditing(false);
+    setEditingReturnId(null);
+    setSelectedCustomer(null);
+    setSelectedSalesPerson(null);
+    setReturnInvoiceNumber("");
+    setSaleData({
+      saleId: null,
+      invoiceNumber: "",
+      customerId: "",
+      salesPersonId: "",
+      saleDate: new Date().toISOString(),
+      subTotal: 0,
+      discount: 0,
+      tax: 0,
+      total: 0,
+      paidAmount: 0,
+      remainingAmount: 0,
+      paymentMethod: "Cash",
+      status: "Return",
+      comments: "",
+      details: [],
+    });
+  };
+
+  const applyModeSwitch = (nextMode) => {
+    if (nextMode === "sale") {
+      resetAll();
+      return;
+    }
+
+    resetCart();
+    setFoundSale(null);
+    setReturnLoaded(false);
+    setIsManualReturn(false);
+    setIsEditing(false);
+    setEditingReturnId(null);
+    setSelectedCustomer(null);
+    setSelectedSalesPerson(null);
+    setReturnInvoiceNumber("");
+    setSaleData({
+      saleId: null,
+      invoiceNumber: "",
+      customerId: "",
+      salesPersonId: "",
+      saleDate: new Date().toISOString(),
+      subTotal: 0,
+      discount: 0,
+      tax: 0,
+      total: 0,
+      paidAmount: 0,
+      remainingAmount: 0,
+      paymentMethod: "Cash",
+      status: "Return",
+      comments: "",
+      details: [],
+    });
+    setMode("return");
+  };
+
+  const requestModeSwitch = (nextMode) => {
+    if (nextMode === mode) return;
+    const hasUnsavedWork =
+      cartItems.some((item) => !item.isVoid) ||
+      isEditing ||
+      returnLoaded ||
+      Boolean(foundSale) ||
+      Boolean(saleData.customerId) ||
+      Boolean(saleData.salesPersonId);
+    if (hasUnsavedWork) {
+      setConfirmState({
+        isOpen: true,
+        type: "switchMode",
+        payload: nextMode,
+      });
+      return;
+    }
+    applyModeSwitch(nextMode);
+  };
+// ✅ The correct way to handle the transaction flow
+    const handlePOSProcessTransaction = (method) => {
+        if (method === "Cash") {
+            setShowPaymentModal("Cash");
+        } else if (method === "Card/QR") {
+            setShowPaymentModal("Digital");
+        } else if (method === "Credit") {
+            setShowCreditModal(true);
+        } else {
+            // Fallback for any other method
+            processTransaction(method, true); 
+        }
+    };
   // ═══════════════════════════════════════════════
   // SALE LOADER
   // ═══════════════════════════════════════════════
-  const { loadSaleForEdit, loadSaleForReturn, loadReturnForEdit } =
-    usePosSaleLoader({
+  const { loadSaleForEdit, loadSaleForReturn } = usePosSaleLoader({
       customers,
       salesPersons,
       products,
@@ -222,15 +372,7 @@ function SalesAndReturn() {
     products, 
   });
 
-  // ═══════════════════════════════════════════════
-  // INITIAL SALE NUMBER
-  // ═══════════════════════════════════════════════
-  useEffect(() => {
-    setSaleData((prev) => ({
-      ...prev,
-      invoiceNumber: prev.invoiceNumber || `INV-${Date.now()}`,
-    }));
-  }, []);
+
 
   // ═══════════════════════════════════════════════
   // LOAD ALL SALES
@@ -264,6 +406,9 @@ function SalesAndReturn() {
       saveSale();
     } else if (type === "hold") {
       confirmHold();
+    } else if (type === "switchMode") {
+      setConfirmState({ isOpen: false, type: null, payload: null });
+      applyModeSwitch(confirmState.payload);
     }
   };
 
@@ -298,7 +443,7 @@ function SalesAndReturn() {
     setSaleData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const searchSaleForReturn = () => {
+  const searchSaleForReturn = async () => {
     if (!returnInvoiceNumber.trim()) {
       notify.warning("Please enter a sale invoice number");
       return;
@@ -309,25 +454,25 @@ function SalesAndReturn() {
     }
 
     setSearchingSale(true);
-
-    setTimeout(() => {
+    try {
       const term = returnInvoiceNumber.trim().toLowerCase();
-      const found =
-        allSales.find((s) => s.invoiceNumber?.toLowerCase() === term) ||
-        allSales.find((s) => s.invoiceNumber?.toLowerCase().includes(term));
+      const found = allSales.find(
+        (sale) => String(getInvoiceNumber(sale)).toLowerCase() === term
+      );
 
-      if (found) {
-        setFoundSale(found);
-        setReturnLoaded(true);
-        setIsManualReturn(false);
-        setReturnInvoiceNumber("");
-        loadSaleForReturn(found);
-        notify.success(`Sale ${found.invoiceNumber} loaded for return`);
-      } else {
+      if (!found) {
         notify.warning(`Sale "${returnInvoiceNumber}" not found`);
+        return;
       }
+
+      await loadSaleForReturn(found);
+      setReturnInvoiceNumber("");
+    } catch (error) {
+      console.error("Error loading sale for return:", error);
+      notify.error(error.message || "Unable to load this sale for return.");
+    } finally {
       setSearchingSale(false);
-    }, 300);
+    }
   };
 
   const startManualReturn = () => {
@@ -335,7 +480,10 @@ function SalesAndReturn() {
     setFoundSale(null);
     setReturnLoaded(true);
     setIsManualReturn(true);
+    setIsEditing(false);
     setEditingReturnId(null);
+    setSelectedCustomer(null);
+    setSelectedSalesPerson(null);
     setCartItems([]);
     setSaleData((prev) => ({
       ...prev,
@@ -345,7 +493,12 @@ function SalesAndReturn() {
       discount: 0,
       tax: 0,
       total: 0,
+      paidAmount: 0,
+      remainingAmount: 0,
+      paymentMethod: "Cash",
+      status: "Return",
       comments: "Manual return without invoice",
+      details: [],
     }));
     notify.info("Manual return mode enabled");
   };
@@ -433,27 +586,15 @@ function SalesAndReturn() {
   // ═══════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════
-  if (loading) {
-    return (
-      <div className="pos-fullscreen">
-        <LowStockAlert onRefresh={refreshProducts} />
-        <LoadingSpinner fullPage message="Loading POS data..." size="large" />
-      </div>
-    );
-  }
-
   return (
     <div className="pos-fullscreen">
-      <LowStockAlert onRefresh={refreshProducts} />
-
       <POSHeader
         mode={mode}
         isEditing={isEditing}
         saleData={saleData}
-        resetAll={resetAll}
-        setMode={setMode}
+        products={products}
+        onSelectMode={requestModeSwitch}
         navigate={navigate}
-        refreshProducts={refreshProducts}
         onSearchSales={() => setShowSalesSearch(true)}
         onViewReturns={() => setShowReturnsSearch(true)}
         exitPOS={exitPOS}
@@ -479,13 +620,15 @@ function SalesAndReturn() {
                 }`}
                 onClick={() => setActiveTab("master")}
               >
-                👤 Master
+                <UserRound size={15} strokeWidth={2} />
+                <span>{t("pos.master")}</span>
               </button>
               <button
                 className={`tab-btn ${activeTab === "items" ? "active" : ""}`}
                 onClick={() => setActiveTab("items")}
               >
-                📦 Items
+                <Package size={15} strokeWidth={2} />
+                <span>{t("pos.items")}</span>
               </button>
             </div>
 
@@ -527,7 +670,11 @@ function SalesAndReturn() {
                 totalPages={totalPages}
                 currentPage={currentPage}
                 addProductToCart={addProductToCart}
-                foundSale={foundSale}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                showOutOfStock={showOutOfStock}
+                setShowOutOfStock={setShowOutOfStock}
+                categories={categories}
                 setShowProductModal={setShowProductModal}
               />
             )}
@@ -535,6 +682,7 @@ function SalesAndReturn() {
 
           <POSCart
             mode={mode}
+            isManualReturn={isManualReturn}
             cartItems={cartItems}
             activeCount={activeCount}
             voidedCount={voidedCount}
@@ -558,13 +706,9 @@ function SalesAndReturn() {
   setSaleData={setSaleData}
   resetAll={resetAll}
   onOpenHeldSales={() => setShowHeldModal(true)}
-  processTransaction={(method) => {
-    // ✅ Route to the correct modal
-    if (method === "Cash") setShowPaymentModal("Cash");
-    else if (method === "Card/QR") setShowPaymentModal("Digital");
-    else if (method === "Credit") setShowCreditModal(true);
-    else processTransaction(method);
-  }}
+  onClear={mode === "return" ? clearReturnTransaction : resetAll}
+  cartItems={cartItems}
+  processTransaction={handlePOSProcessTransaction}
   processReturn={processReturn}
   handleHold={handleHold}
 />
@@ -595,7 +739,6 @@ function SalesAndReturn() {
         salesPersons={salesPersons}
         selectedSalesPerson={selectedSalesPerson}
         selectSalesPerson={selectSalesPerson}
-        refreshProducts={refreshProducts}
         onPrint={() => {}}
         
         // Payment & Credit Modals
@@ -604,6 +747,7 @@ function SalesAndReturn() {
         showCreditModal={showCreditModal}
         setShowCreditModal={setShowCreditModal}
         saleData={saleData}
+        
         processTransaction={processTransaction}
       />
 
@@ -614,8 +758,8 @@ function SalesAndReturn() {
             loadSaleForEdit(sale);
             setShowSalesSearch(false);
           }}
-          onReturnSale={(sale) => {
-            loadSaleForReturn(sale);
+          onReturnSale={async (sale) => {
+            await loadSaleForReturn(sale);
             setShowSalesSearch(false);
           }}
         />
@@ -624,10 +768,6 @@ function SalesAndReturn() {
       {showReturnsSearch && (
         <SalesReturnSearch
           onClose={() => setShowReturnsSearch(false)}
-          onEditReturn={(salesReturn) => {
-            loadReturnForEdit(salesReturn);
-            setShowReturnsSearch(false);
-          }}
         />
       )}
 
@@ -640,6 +780,8 @@ function SalesAndReturn() {
         title={
           confirmState.type === "exit"
             ? "Exit POS?"
+            : confirmState.type === "switchMode"
+            ? "Discard current transaction?"
             : confirmState.type === "processSale"
             ? "Complete Sale?"
             : "Hold Sale?"
@@ -647,6 +789,10 @@ function SalesAndReturn() {
         message={
           confirmState.type === "exit"
             ? `You have ${cartItems.length} item(s) in the cart.\n\nExiting will clear the cart. Continue?`
+            : confirmState.type === "switchMode"
+            ? `Switching modes will clear the current ${
+                mode === "sale" ? "sale" : "return or exchange"
+              } transaction. Continue?`
             : confirmState.type === "processSale"
             ? `Total: PKR ${saleData.total.toFixed(
                 2
@@ -659,6 +805,8 @@ function SalesAndReturn() {
         confirmText={
           confirmState.type === "exit"
             ? "Exit"
+            : confirmState.type === "switchMode"
+            ? "Discard and switch"
             : confirmState.type === "processSale"
             ? "Complete"
             : "Hold"
@@ -666,6 +814,8 @@ function SalesAndReturn() {
         variant={
           confirmState.type === "exit"
             ? "danger"
+            : confirmState.type === "switchMode"
+            ? "warning"
             : confirmState.type === "processSale"
             ? "info"
             : "warning"

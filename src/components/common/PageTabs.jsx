@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react"; // ✅ Add React import
 import { Plus } from "lucide-react";
 import "../../assets/styles/common/PageTabs.css";
+import EmptyState from "./EmptyState";
 
 function PageTabs({ 
   children, 
@@ -95,7 +96,7 @@ function PageTabs({
               </button>
             ))
           ) : (
-            <span className="no-tabs">No tabs available</span>
+            <EmptyState title="No tabs available" compact />
           )}
         </div>
 

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, CornerDownLeft } from "lucide-react";
 import "../../assets/styles/common/Pagination.css";
+import { useTranslation } from "react-i18next";
 
 function Pagination({
   currentPage,
@@ -12,6 +13,7 @@ function Pagination({
   onPageSizeChange,
   siblingCount = 1,
 }) {
+  const { t } = useTranslation();
   const [goToPage, setGoToPage] = useState("");
 
   useEffect(() => {
@@ -74,15 +76,15 @@ function Pagination({
     <div className="pagination-container">
       <div className="pagination-info">
         <span>
-          Showing <strong>{startItem}</strong>–<strong>{endItem}</strong> of{" "}
-          <strong>{totalItems}</strong> entries
+          {t("common.showing")} <strong>{startItem}</strong>–<strong>{endItem}</strong> {t("common.of")}{" "}
+          <strong>{totalItems}</strong> {t("common.entries")}
         </span>
       </div>
 
       <div className="pagination-toolbar">
         {/* Page size */}
         <div className="toolbar-segment">
-          <label>Rows</label>
+          <label>{t("common.rows")}</label>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
@@ -104,7 +106,7 @@ function Pagination({
             className="nav-btn"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            aria-label="Previous page"
+            aria-label={t("common.previousPage")}
           >
             <ChevronLeft size={16} strokeWidth={2} />
           </button>
@@ -132,7 +134,7 @@ function Pagination({
             className="nav-btn"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            aria-label="Next page"
+            aria-label={t("common.nextPage")}
           >
             <ChevronRight size={16} strokeWidth={2} />
           </button>
@@ -142,7 +144,7 @@ function Pagination({
 
         {/* Go to page */}
         <div className="toolbar-segment go-to-segment">
-          <label>Go to</label>
+          <label>{t("common.goTo")}</label>
           <input
             type="number"
             min="1"
@@ -153,13 +155,13 @@ function Pagination({
               if (e.key === "Enter") handleGoToPage(e);
             }}
             className="pagination-input"
-            placeholder="Page"
+            placeholder={t("common.page")}
           />
           <button
             className={`go-btn ${goToValid ? "go-btn--ready" : ""}`}
             onClick={handleGoToPage}
             disabled={!goToValid}
-            aria-label="Go"
+            aria-label={t("common.go")}
           >
             <CornerDownLeft size={14} strokeWidth={2} />
           </button>

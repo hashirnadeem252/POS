@@ -10,6 +10,9 @@ import {
   Plus,
 } from "lucide-react";
 import POSCartTotals from "./POSCartTotals";
+import { useTranslation } from "react-i18next";
+import { useSettings } from "../../contexts/SettingsContext";
+import EmptyState from "../common/EmptyState";
 
 function POSCart({
   mode,
@@ -26,7 +29,11 @@ function POSCart({
   removeItem,
   toggleItemType,
   saleData,
+  isManualReturn,
 }) {
+  const { t } = useTranslation();
+  const { formatCurrency } = useSettings();
+
   return (
     <div className="pos-center">
       {/* Header */}
@@ -35,12 +42,12 @@ function POSCart({
           {mode === "return" ? (
             <>
               <RotateCcw size={16} strokeWidth={2} />
-              Return / Exchange Cart
+              {t("pos.returnExchangeCart")}
             </>
           ) : (
             <>
               <ShoppingCart size={16} strokeWidth={2} />
-              Cart
+              {t("pos.cart")}
             </>
           )}
         </h3>
@@ -73,15 +80,12 @@ function POSCart({
       {/* Items */}
       <div className="cart-items-container">
         {cartItems.length === 0 ? (
-          <div className="empty-cart">
-            <ShoppingCart size={36} strokeWidth={1.25} />
-            <p>No items in cart</p>
-            <p className="empty-hint">
-              {mode === "return"
-                ? "Add items from the list to return or exchange"
-                : "Click a product to add it to the cart"}
-            </p>
-          </div>
+          <EmptyState
+            icon={<ShoppingCart size={36} strokeWidth={1.25} />}
+            title={t("pos.noItems")}
+            description={mode === "return" ? t("pos.addForReturn") : t("pos.clickToAdd")}
+            compact
+          />
         ) : (
           <table className="cart-table">
             <thead>
@@ -91,7 +95,7 @@ function POSCart({
                 <th>Code</th>
                 <th>Qty</th>
                 <th>Type</th>
-                <th>Discount</th>
+                <th>{t("pos.discount")}</th>
                 <th>Total</th>
                 <th></th>
               </tr>
@@ -157,7 +161,7 @@ function POSCart({
                             disabled={
                               isVoided ||
                               (item.returnQty || 0) >=
-                                (item.maxReturn || 999)
+                                (item.maxReturn ?? 999)
                             }
                           >
                             <Plus size={12} strokeWidth={2.5} />
@@ -228,8 +232,8 @@ function POSCart({
                         <button
                           className="type-badge return-type"
                           onClick={() => !isVoided && toggleItemType(index)}
-                          disabled={isVoided}
-                          title="Click to change to Sale"
+                          disabled={isVoided || isManualReturn}
+                          title="Click to change to Exchange"
                         >
                           <RotateCcw size={11} strokeWidth={2.5} />
                           Return
@@ -238,7 +242,7 @@ function POSCart({
                         <button
                           className="type-badge exchange-type"
                           onClick={() => !isVoided && toggleItemType(index)}
-                          disabled={isVoided}
+                          disabled={isVoided || isManualReturn}
                           title="Click to change to Return"
                         >
                           <ArrowLeftRight size={11} strokeWidth={2.5} />
@@ -249,6 +253,9 @@ function POSCart({
                         <button
                           className="type-badge sale-type clickable"
                           onClick={() => toggleItemType(index)}
+                          disabled={
+                            (item.maxReturn ?? 0) <= 0
+                          }
                           title="Click to mark this item as a Return"
                         >
                           <ShoppingCart size={11} strokeWidth={2.5} />
@@ -273,7 +280,7 @@ function POSCart({
                           updateDiscount(index, e.target.value)
                         }
                         step="0.01"
-                        disabled={isVoided}
+                        disabled={isVoided || isReturnItem}
                       />
                     </td>
 
@@ -288,8 +295,8 @@ function POSCart({
                       }`}
                     >
                       {isReturnItem
-                        ? `-PKR ${Math.abs(item.total || 0).toFixed(2)}`
-                        : `PKR ${(item.total || 0).toFixed(2)}`}
+                        ? `-${formatCurrency(Math.abs(item.total || 0))}`
+                        : formatCurrency(item.total || 0)}
                     </td>
 
                     {/* Actions */}
@@ -321,7 +328,9 @@ function POSCart({
       </div>
 
       <POSCartTotals
+        mode={mode}
         saleData={saleData}
+        cartItems={cartItems}
         returnCount={returnCount}
         exchangeCount={exchangeCount}
       />

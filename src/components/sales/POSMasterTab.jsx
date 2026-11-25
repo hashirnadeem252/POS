@@ -1,5 +1,6 @@
 // components/sales/POSMasterTab.jsx
 import { Search, X, Info, Calendar, Clock, Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function POSMasterTab({
   salesPersonSearch,
@@ -25,12 +26,14 @@ function POSMasterTab({
   onQuickAddCustomer,
   onQuickAddSalesPerson,
 }) {
+  const { t, i18n } = useTranslation();
+
   return (
     <div className="master-tab">
       {/* Sales Person */}
       <div className="master-search-group">
         <label className="master-label">
-          Sales Person <span className="optional-label">(Optional)</span>
+          {t("pos.salesPerson")} <span className="optional-label">{t("pos.optional")}</span>
         </label>
 
         <div className="search-with-button">
@@ -40,7 +43,7 @@ function POSMasterTab({
               <input
                 type="text"
                 className="input"
-                placeholder="Search by code or name"
+                placeholder={t("pos.searchByCodeName")}
                 value={salesPersonSearch}
                 onChange={(e) => setSalesPersonSearch(e.target.value)}
               />
@@ -61,18 +64,18 @@ function POSMasterTab({
             {/* ✅ Empty State */}
             {salesPersonSearch && filteredSalesPersons.length === 0 && (
               <div className="search-results" style={{ padding: "12px", textAlign: "center", fontSize: "12px", color: "#6B7A8F" }}>
-                No sales person found.
+                {t("pos.noSalesPerson")}
               </div>
             )}
           </div>
 
           {/* ✅ Quick Add Button */}
-          <button className="btn btn-outline btn-sm lookup-btn" onClick={onQuickAddSalesPerson} style={{ color: "#0D9488", borderColor: "#0D9488", padding: "0 10px" }} title="Quick Add Sales Person">
+          <button className="btn btn-outline btn-sm lookup-btn" onClick={onQuickAddSalesPerson} style={{ color: "#0D9488", borderColor: "#0D9488", padding: "0 10px" }} title={t("pos.quickAddSalesPerson")} aria-label={t("pos.quickAddSalesPerson")}>
             <Plus size={16} />
           </button>
           
           <button className="btn btn-outline btn-sm lookup-btn" onClick={() => setShowSalesPersonModal(true)}>
-            <Search size={13} strokeWidth={2} /> Lookup
+            <Search size={13} strokeWidth={2} /> {t("pos.lookup")}
           </button>
         </div>
 
@@ -89,7 +92,7 @@ function POSMasterTab({
       {/* Customer */}
       <div className="master-search-group">
         <label className="master-label">
-          Customer <span className="optional-label">(Optional)</span>
+          {t("pos.customer")} <span className="optional-label">{t("pos.optional")}</span>
         </label>
 
         <div className="search-with-button">
@@ -99,7 +102,7 @@ function POSMasterTab({
               <input
                 type="text"
                 className="input"
-                placeholder="Search by name, phone, or code"
+                placeholder={t("pos.searchCustomer")}
                 value={customerSearch}
                 onChange={(e) => setCustomerSearch(e.target.value)}
               />
@@ -121,18 +124,18 @@ function POSMasterTab({
             {/* ✅ Empty State */}
             {customerSearch && filteredCustomers.length === 0 && (
               <div className="search-results" style={{ padding: "12px", textAlign: "center", fontSize: "12px", color: "#6B7A8F" }}>
-                No customer found. Click + to add.
+                {t("pos.noCustomer")}
               </div>
             )}
           </div>
 
           {/* ✅ Quick Add Button */}
-          <button className="btn btn-outline btn-sm lookup-btn" onClick={onQuickAddCustomer} style={{ color: "#0D9488", borderColor: "#0D9488", padding: "0 10px" }} title="Quick Add Customer">
+          <button className="btn btn-outline btn-sm lookup-btn" onClick={onQuickAddCustomer} style={{ color: "#0D9488", borderColor: "#0D9488", padding: "0 10px" }} title={t("pos.quickAddCustomer")} aria-label={t("pos.quickAddCustomer")}>
             <Plus size={16} />
           </button>
 
           <button className="btn btn-outline btn-sm lookup-btn" onClick={() => setShowCustomerModal(true)}>
-            <Search size={13} strokeWidth={2} /> Lookup
+            <Search size={13} strokeWidth={2} /> {t("pos.lookup")}
           </button>
         </div>
 
@@ -150,7 +153,7 @@ function POSMasterTab({
       <div className="master-date">
         <label className="master-label">
           <Calendar size={13} strokeWidth={2} />
-          Current Date & Time
+          {t("pos.currentDateTime")}
         </label>
         <div style={{ 
           padding: "10px 14px", 
@@ -165,7 +168,7 @@ function POSMasterTab({
           gap: "8px"
         }}>
           <Clock size={16} />
-          {new Date().toLocaleString("en-PK", {
+          {new Date().toLocaleString(i18n.resolvedLanguage?.startsWith("ur") ? "ur-PK" : "en-PK", {
             weekday: "short",
             year: "numeric",
             month: "short",

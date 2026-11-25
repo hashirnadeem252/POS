@@ -118,6 +118,11 @@ td.hidden {
   color: white;
 }
 
+.btn-sm:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
 /* ========== EMPTY STATE ========== */
 .empty-state {
   text-align: center;

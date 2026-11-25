@@ -9,6 +9,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
@@ -188,6 +189,7 @@
 .tab-content {
   flex: 1;
   overflow-y: auto;
+  min-width: 0;
   padding: 20px 24px 24px;
   background: var(--color-surface);
   min-height: 0;
@@ -272,6 +274,7 @@
    ======================================== */
 .tabs-container.tabs-flush-top {
   margin: -24px -28px 0;
+  width: calc(100% + 56px);
   border-radius: 0;
   box-shadow: none;
 }
@@ -279,4 +282,11 @@
 .tabs-container.tabs-flush-top .tabs-header {
   border-radius: 0;
   box-shadow: 0 1px 3px rgba(18, 32, 58, 0.04);
+}
+
+@media (max-width: 768px) {
+  .tabs-container.tabs-flush-top {
+    margin: -16px -16px 0;
+    width: calc(100% + 32px);
+  }
 }
