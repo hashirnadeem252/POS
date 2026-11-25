@@ -5,12 +5,11 @@ import { useDispatch } from "react-redux";
 import "./MainLayout.css";
 import NotificationDropdown from "../components/common/NotificationDropdown";
 import BrandLogo from "../components/common/BrandLogo";
-import MasterDataSyncStatus from "../components/common/MasterDataSyncStatus";
+import MasterDataSyncStatus from "../components/common/MasterDataSyncStatus"; // ✅ Restored
 import PageBreadcrumbs from "../components/common/PageBreadcrumbs";
 import LanguageToggle from "../components/common/LanguageToggle";
 import EmptyState from "../components/common/EmptyState";
 import TrialBanner from "../components/common/TrialBanner";
-import MasterSyncModal from "../components/common/MasterSyncModal"; // ✅ Imported
 import {
   getBreadcrumbsForPath,
   setBreadcrumbs,
@@ -37,14 +36,12 @@ import {
   ShieldCheck,
   Wallet,
   BarChart3,
-  RefreshCw, // ✅ Imported
 } from "lucide-react";
 import { useAuth } from "../hooks/auth/useAuth";
 import { notify } from "../utils/notify";
 import { useTranslation } from "react-i18next";
 
 function MainLayout() {
-  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false); // ✅ Modal state
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -457,26 +454,9 @@ function MainLayout() {
           <div className="header-right">
             <LanguageToggle />
             
-            {/* ✅ THE SYNC BUTTON */}
-            <button 
-              className="header-sync-btn" 
-              onClick={() => setIsSyncModalOpen(true)}
-              title="Sync Master Data"
-              style={{ 
-                background: 'transparent', 
-                border: 'none', 
-                cursor: 'pointer', 
-                padding: '8px', 
-                color: 'var(--color-text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <RefreshCw size={18} />
-            </button>
-
+            {/* ✅ Restored the original sync status */}
             <MasterDataSyncStatus />
+            
             <NotificationDropdown />
 
             <div
@@ -525,12 +505,6 @@ function MainLayout() {
           <Outlet />
         </main>
       </div>
-
-      {/* ✅ THE SYNC MODAL */}
-      <MasterSyncModal 
-        isOpen={isSyncModalOpen} 
-        onClose={() => setIsSyncModalOpen(false)} 
-      />
     </div>
   );
 }

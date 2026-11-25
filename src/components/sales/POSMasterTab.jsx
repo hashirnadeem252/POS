@@ -1,6 +1,8 @@
 // components/sales/POSMasterTab.jsx
-import { Search, X, Info, Calendar, Clock, Plus } from "lucide-react";
+import { useState } from "react";
+import { Search, X, Info, Calendar, Clock, Plus, Receipt } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import MonthlyStatementModal from "../customers/MonthlyStatementModal";
 
 function POSMasterTab({
   salesPersonSearch,
@@ -22,11 +24,11 @@ function POSMasterTab({
   setShowSalesPersonModal,
   setShowCustomerModal,
   mode,
-  // ✅ NEW PROPS
   onQuickAddCustomer,
   onQuickAddSalesPerson,
 }) {
   const { t, i18n } = useTranslation();
+  const [statementCustomer, setStatementCustomer] = useState(null);
 
   return (
     <div className="master-tab">
@@ -49,7 +51,6 @@ function POSMasterTab({
               />
             </div>
 
-            {/* Search Results */}
             {salesPersonSearch && filteredSalesPersons.length > 0 && (
               <div className="search-results">
                 {filteredSalesPersons.slice(0, 5).map((p) => (
@@ -61,7 +62,6 @@ function POSMasterTab({
               </div>
             )}
             
-            {/* ✅ Empty State */}
             {salesPersonSearch && filteredSalesPersons.length === 0 && (
               <div className="search-results" style={{ padding: "12px", textAlign: "center", fontSize: "12px", color: "#6B7A8F" }}>
                 {t("pos.noSalesPerson")}
@@ -69,8 +69,7 @@ function POSMasterTab({
             )}
           </div>
 
-          {/* ✅ Quick Add Button */}
-          <button className="btn btn-outline btn-sm lookup-btn" onClick={onQuickAddSalesPerson} style={{ color: "#0D9488", borderColor: "#0D9488", padding: "0 10px" }} title={t("pos.quickAddSalesPerson")} aria-label={t("pos.quickAddSalesPerson")}>
+          <button className="btn btn-outline btn-sm lookup-btn" onClick={onQuickAddSalesPerson} style={{ color: "#0D9488", borderColor: "#0D9488", padding: "0 10px" }}>
             <Plus size={16} />
           </button>
           
@@ -108,7 +107,6 @@ function POSMasterTab({
               />
             </div>
 
-            {/* Search Results */}
             {customerSearch && filteredCustomers.length > 0 && (
               <div className="search-results">
                 {filteredCustomers.slice(0, 5).map((c) => (
@@ -121,7 +119,6 @@ function POSMasterTab({
               </div>
             )}
 
-            {/* ✅ Empty State */}
             {customerSearch && filteredCustomers.length === 0 && (
               <div className="search-results" style={{ padding: "12px", textAlign: "center", fontSize: "12px", color: "#6B7A8F" }}>
                 {t("pos.noCustomer")}
@@ -129,8 +126,7 @@ function POSMasterTab({
             )}
           </div>
 
-          {/* ✅ Quick Add Button */}
-          <button className="btn btn-outline btn-sm lookup-btn" onClick={onQuickAddCustomer} style={{ color: "#0D9488", borderColor: "#0D9488", padding: "0 10px" }} title={t("pos.quickAddCustomer")} aria-label={t("pos.quickAddCustomer")}>
+          <button className="btn btn-outline btn-sm lookup-btn" onClick={onQuickAddCustomer} style={{ color: "#0D9488", borderColor: "#0D9488", padding: "0 10px" }}>
             <Plus size={16} />
           </button>
 
@@ -140,16 +136,30 @@ function POSMasterTab({
         </div>
 
         {selectedCustomer && (
-          <div className="selected-item">
-            <span>{selectedCustomer.name}</span>
-            <button className="btn-clear" onClick={() => { setSelectedCustomer(null); setSaleData((prev) => ({ ...prev, customerId: "" })); }}>
-              <X size={12} strokeWidth={2.5} />
-            </button>
+          <div className="selected-item" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span>{selectedCustomer.name}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {/* ✅ NEW: View Khata Button */}
+              <button 
+                onClick={() => setStatementCustomer(selectedCustomer)}
+                className="btn btn-sm"
+                style={{ background: "transparent", color: "var(--color-primary)", padding: "4px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px" }}
+                title="View Monthly Khata"
+              >
+                <Receipt size={14} /> Khata
+              </button>
+
+              <button className="btn-clear" onClick={() => { setSelectedCustomer(null); setSaleData((prev) => ({ ...prev, customerId: "" })); }}>
+                <X size={12} strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
         )}
       </div>
 
-        {/* Sale Date - Read Only */}
+      {/* Sale Date - Read Only */}
       <div className="master-date">
         <label className="master-label">
           <Calendar size={13} strokeWidth={2} />
@@ -179,8 +189,34 @@ function POSMasterTab({
         </div>
       </div>
 
-      {/* Original sale info & Return mode help remain unchanged */}
-      {/* ... */}
+      {/* Original sale info & Return mode help */}
+      {foundSale && (
+        <div className="found-sale-info">
+          <div className="found-sale-badge">
+            <Info size={14} />
+            <span>Original Sale: {foundSale.invoiceNumber}</span>
+          </div>
+          <div className="found-sale-details">
+            <span>Date: {new Date(foundSale.saleDate).toLocaleDateString()}</span>
+            <span>Total: PKR {foundSale.total.toFixed(2)}</span>
+          </div>
+        </div>
+      )}
+
+      {mode === "return" && !foundSale && (
+        <div className="return-mode-help" style={{ padding: "12px", background: "#FEF3C7", borderRadius: "8px", fontSize: "12px", color: "#92400E", marginTop: "12px" }}>
+          <Info size={14} style={{ display: "inline", marginRight: "6px", verticalAlign: "middle" }} />
+          Manual Return Mode: You can add items to return without an original invoice.
+        </div>
+      )}
+
+      {/* ✅ NEW: Monthly Statement Modal */}
+      {statementCustomer && (
+        <MonthlyStatementModal 
+          customer={statementCustomer} 
+          onClose={() => setStatementCustomer(null)} 
+        />
+      )}
     </div>
   );
 }

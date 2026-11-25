@@ -1,22 +1,37 @@
-// pages/Customers/CustomersLedger.jsx
+// src/pages/CustomersLedger.jsx
 import { useState, useEffect } from "react";
-import { Wallet, Search, X, CheckCircle2, Users, ArrowDownToLine, CircleDollarSign } from "lucide-react";
-import { api } from "../services/apiClient";
-import { notify } from "../utils/notify";
-import FormInput from "../components/common/FormInput";
-import { useSettings } from "../contexts/SettingsContext";
-import "../assets/styles/customers/CustomersLedger.css";
-import EmptyState from "../components/common/EmptyState";
+import { 
+  Wallet, 
+  Search, 
+  X, 
+  CheckCircle2, 
+  Users, 
+  ArrowDownToLine, 
+  CircleDollarSign, 
+  Receipt 
+} from "lucide-react";
+import { api } from "../services/apiClient"; // ✅ Fixed (removed one ../)
+import { notify } from "../utils/notify"; // ✅ Fixed
+import FormInput from "../components/common/FormInput"; // ✅ Fixed
+import { useSettings } from "../contexts/SettingsContext"; // ✅ Fixed
+import MonthlyStatementModal from "../components/customers/MonthlyStatementModal"; // ✅ Fixed
+import "../assets/styles/customers/CustomersLedger.css"; // ✅ Fixed
+import EmptyState from "../components/common/EmptyState"; // ✅ Fixed
 
 export default function CustomersLedger() {
   const { formatCurrency } = useSettings();
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  
+  // State for Payment Modal
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // State for Monthly Statement Modal
+  const [statementCustomer, setStatementCustomer] = useState(null);
 
   const loadBalances = async () => {
     try {
@@ -56,7 +71,6 @@ export default function CustomersLedger() {
     }
   };
 
-  // ✅ FIXED: Safe search that won't crash on null names
   const filtered = customers.filter(c => {
     const searchLower = search.toLowerCase();
     const nameMatch = c.name ? c.name.toLowerCase().includes(searchLower) : false;
@@ -178,7 +192,16 @@ export default function CustomersLedger() {
                     <td className={`ledger-number-cell ${balance > 0 ? "ledger-balance-due" : "ledger-balance-clear"}`}>
                       {formatCurrency(balance)}
                     </td>
-                    <td className="ledger-action-cell">
+                    <td className="ledger-action-cell" style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                      <button
+                        onClick={() => setStatementCustomer(customer)}
+                        className="btn btn-outline ledger-payment-button"
+                        title="View Monthly Khata Statement"
+                        style={{ color: "var(--color-primary)", borderColor: "var(--color-primary)" }}
+                      >
+                        <Receipt size={15} /> View Bill
+                      </button>
+
                       <button
                         onClick={() => setSelectedCustomer(customer)}
                         className="btn btn-primary ledger-payment-button"
@@ -203,7 +226,6 @@ export default function CustomersLedger() {
             className="ledger-payment-dialog"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="ledger-payment-title"
           >
             <button
               onClick={() => setSelectedCustomer(null)}
@@ -214,7 +236,7 @@ export default function CustomersLedger() {
             </button>
 
             <span className="ledger-dialog-icon"><Wallet size={20} /></span>
-            <h2 id="ledger-payment-title">Receive Payment</h2>
+            <h2>Receive Payment</h2>
             <p className="ledger-dialog-subtitle">Record a payment against this customer account.</p>
 
             <div className="ledger-payment-customer">
@@ -266,6 +288,13 @@ export default function CustomersLedger() {
             </form>
           </div>
         </div>
+      )}
+
+      {statementCustomer && (
+        <MonthlyStatementModal 
+          customer={statementCustomer} 
+          onClose={() => setStatementCustomer(null)} 
+        />
       )}
     </div>
   );
