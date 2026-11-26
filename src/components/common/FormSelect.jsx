@@ -1,7 +1,7 @@
 // components/common/FormSelect.jsx
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, Check, Search, X } from "lucide-react";
+import { ChevronDown, Check, Search, X, Plus } from "lucide-react";
 import "../../assets/styles/common/FormSelect.css";
 import InfoIcon from "./InfoIcon";
 import EmptyState from "./EmptyState";
@@ -25,6 +25,8 @@ function FormSelect({
   searchable = true,
   emptyMessage = "No options",
   className = "",
+  onAdd = null,
+  addLabel = "Add new",
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -75,9 +77,18 @@ function FormSelect({
     const spaceAbove = rect.top - 16;
 
     // Minimum height we want to show
-    const MIN_HEIGHT = 180;
+    const MIN_HEIGHT = 150;
     const MAX_HEIGHT = 320;
-    const ESTIMATED_HEIGHT = Math.min(filteredOptions.length * 40 + 60, MAX_HEIGHT);
+    const searchHeight = searchable ? 44 : 0;
+    const addHeight = onAdd ? 52 : 0;
+    const optionsHeight =
+      filteredOptions.length > 0
+        ? Math.min(filteredOptions.length * 40 + 8, 220)
+        : 84;
+    const ESTIMATED_HEIGHT = Math.min(
+      searchHeight + addHeight + optionsHeight,
+      MAX_HEIGHT
+    );
 
     // Decide direction
     const openUp = spaceBelow < MIN_HEIGHT && spaceAbove > spaceBelow;
@@ -100,7 +111,7 @@ function FormSelect({
       openUp,
       maxHeight,
     });
-  }, [filteredOptions.length]);
+  }, [filteredOptions.length, searchable, onAdd]);
 
   // =========================
   // Open / close handlers
@@ -272,6 +283,22 @@ function FormSelect({
             </button>
           )}
         </div>
+      )}
+
+      {onAdd && (
+        <button
+          type="button"
+          className="custom-select-add"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            closeDropdown();
+            onAdd(searchTerm.trim());
+          }}
+        >
+          <Plus size={15} strokeWidth={2.5} />
+          {addLabel}
+        </button>
       )}
 
       <div className="custom-select-options">

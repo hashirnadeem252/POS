@@ -21,6 +21,7 @@ import useSearch from "../hooks/useSearch.js";
 import { useExport, exportConfigs } from "../hooks/useExport.js";
 import ProductForm from "../components/products/ProductForm.jsx";
 import MasterDataModal from "../components/common/MasterDataModal.jsx";
+import MasterDataManager from "../components/common/MasterDataManager.jsx";
 import {
   getProducts,
   createProduct,
@@ -31,14 +32,20 @@ import {
 import {
   getCategories,
   createCategory,
+  updateCategory,
+  deleteCategory,
 } from "../services/CategoryDefinition/categoryService.js";
 import {
   getBrands,
   createBrand,
+  updateBrand,
+  deleteBrand,
 } from "../services/BrandDefinition/brandService.js";
 import {
   getUnits,
   createUnit,
+  updateUnit,
+  deleteUnit,
 } from "../services/UnitDefinition/unitService.js";
 import {
   productBaseColumns,
@@ -57,6 +64,10 @@ function ProductDefinition() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [showMasterModal, setShowMasterModal] = useState(false);
   const [masterModalType, setMasterModalType] = useState("");
+  const [masterInitialName, setMasterInitialName] = useState("");
+  const [masterSelection, setMasterSelection] = useState(null);
+  const [showMasterManager, setShowMasterManager] = useState(false);
+  const [managerType, setManagerType] = useState("");
   const [showExtraColumns, setShowExtraColumns] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
 
@@ -260,9 +271,47 @@ function ProductDefinition() {
   // =========================
   // MASTER DATA HANDLERS
   // =========================
-  function openMasterModal(type) {
+  function openMasterModal(type, initialName = "") {
     setMasterModalType(type);
+    setMasterInitialName(initialName);
     setShowMasterModal(true);
+  }
+
+  function openMasterManager(type) {
+    setManagerType(type);
+    setShowMasterManager(true);
+  }
+
+  async function refreshManagerData(type = managerType) {
+    if (type === "category") await loadCategories();
+    if (type === "brand") await loadBrands();
+    if (type === "unit") await loadUnits();
+  }
+
+  async function handleManagerCreate(data) {
+    let result;
+    if (managerType === "category") result = await createCategory(data);
+    if (managerType === "brand") result = await createBrand(data);
+    if (managerType === "unit") result = await createUnit(data);
+    await refreshManagerData();
+    notify.success(`${managerType} added successfully!`);
+    return result;
+  }
+
+  async function handleManagerUpdate(id, data) {
+    if (managerType === "category") await updateCategory(id, data);
+    if (managerType === "brand") await updateBrand(id, data);
+    if (managerType === "unit") await updateUnit(id, data);
+    await refreshManagerData();
+    notify.success(`${managerType} updated successfully!`);
+  }
+
+  async function handleManagerDelete(id) {
+    if (managerType === "category") await deleteCategory(id);
+    if (managerType === "brand") await deleteBrand(id);
+    if (managerType === "unit") await deleteUnit(id);
+    await refreshManagerData();
+    notify.success(`${managerType} deleted successfully!`);
   }
 
   async function handleMasterSave(data) {
@@ -272,14 +321,17 @@ function ProductDefinition() {
         case "category":
           result = await createCategory(data);
           await loadCategories();
+          setMasterSelection({ type: "category", id: result?.categoryId ?? result?.CategoryId ?? result });
           break;
         case "brand":
           result = await createBrand(data);
           await loadBrands();
+          setMasterSelection({ type: "brand", id: result?.brandId ?? result?.BrandId ?? result });
           break;
         case "unit":
           result = await createUnit(data);
           await loadUnits();
+          setMasterSelection({ type: "unit", id: result?.unitId ?? result?.UnitId ?? result });
           break;
         default:
           break;
@@ -321,21 +373,21 @@ function ProductDefinition() {
     {
       key: "category",
       icon: <FolderOpen size={16} strokeWidth={1.75} />,
-      title: "Add Category",
-      description: "Create a new product category",
+      title: "Manage Categories",
+      description: "Add, edit or delete categories",
     },
     {
       key: "brand",
       icon: <Tag size={16} strokeWidth={1.75} />,
-      title: "Add Brand",
-      description: "Create a new product brand",
+      title: "Manage Brands",
+      description: "Add, edit or delete brands",
       divider: true,
     },
     {
       key: "unit",
       icon: <Ruler size={16} strokeWidth={1.75} />,
-      title: "Add Unit",
-      description: "Create a new unit of measurement",
+      title: "Manage Units",
+      description: "Add, edit or delete units",
     },
   ];
 
@@ -361,7 +413,7 @@ function ProductDefinition() {
             </button>
             <MasterDataDropdown
               items={masterDataItems}
-              onItemClick={(item) => openMasterModal(item.key)}
+              onItemClick={(item) => openMasterManager(item.key)}
               buttonLabel="Manage"
             />
           </div>
@@ -416,6 +468,10 @@ function ProductDefinition() {
             categories={categories}
             brands={brands}
             units={units}
+            masterSelection={masterSelection}
+            onAddCategory={(initialName) => openMasterModal("category", initialName)}
+            onAddBrand={(initialName) => openMasterModal("brand", initialName)}
+            onAddUnit={(initialName) => openMasterModal("unit", initialName)}
             onClose={handleCancel}
             onSave={handleSave}
           />
@@ -426,14 +482,32 @@ function ProductDefinition() {
       {showMasterModal && (
         <MasterDataModal
           type={masterModalType}
+          initialName={masterInitialName}
           onClose={() => {
             setShowMasterModal(false);
             setMasterModalType("");
+            setMasterInitialName("");
           }}
           onSave={handleMasterSave}
         />
         
       )}
+
+      {/* Master Data Manager */}
+      {showMasterManager && (
+        <MasterDataManager
+          type={managerType}
+          items={
+            managerType === "category" ? categories :
+            managerType === "brand" ? brands : units
+          }
+          onClose={() => setShowMasterManager(false)}
+          onCreate={handleManagerCreate}
+          onUpdate={handleManagerUpdate}
+          onDelete={handleManagerDelete}
+        />
+      )}
+
             {/* Import Products Modal */}
       <ImportProductsModal
         isOpen={showImportModal}

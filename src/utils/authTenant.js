@@ -17,20 +17,29 @@ export function getAuthTenantId(user) {
 export function getCurrentAuthTenantId() {
   if (typeof localStorage === "undefined") return null;
 
-  // ✅ Priority 1: Read from pos_tenant_id (set explicitly by AuthContext)
-  const explicitTenantId = localStorage.getItem(TENANT_KEY);
-  const normalizedExplicit = normalizeTenantId(explicitTenantId);
-  if (normalizedExplicit) return normalizedExplicit;
-
-  // Priority 2: Fallback to pos_auth_user
   const storedUser = localStorage.getItem(USER_KEY);
-  if (!storedUser) return null;
+  let userTenantId = null;
 
-  try {
-    return getAuthTenantId(JSON.parse(storedUser));
-  } catch {
-    return null;
+  if (storedUser) {
+    try {
+      userTenantId = getAuthTenantId(JSON.parse(storedUser));
+    } catch {
+      return null;
+    }
   }
+
+  const explicitTenantId = normalizeTenantId(
+    localStorage.getItem(TENANT_KEY)
+  );
+
+  // The signed-in user is authoritative. A stale or mismatched local marker
+  // must never select another shop's cache or queue.
+  if (userTenantId) {
+    if (explicitTenantId && explicitTenantId !== userTenantId) return null;
+    return userTenantId;
+  }
+
+  return null;
 }
 
 export function requireCurrentAuthTenantId() {

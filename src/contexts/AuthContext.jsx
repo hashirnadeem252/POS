@@ -82,6 +82,14 @@ export function AuthProvider({ children }) {
       const previousTenantId = localStorage.getItem(TENANT_KEY);
       const newTenantId = getAuthTenantId(newUser);
 
+      if (!newTenantId) {
+        clearStoredSession();
+        setUser(null);
+        setToken(null);
+        setSubscription(null);
+        throw new Error("Login response did not contain a valid shop identity.");
+      }
+
       //  If tenant changes, force a full reload.
       if (previousTenantId && newTenantId && previousTenantId !== newTenantId) {
         console.warn(`Tenant changed from ${previousTenantId} to ${newTenantId}. Reloading page...`);
@@ -219,8 +227,15 @@ export function AuthProvider({ children }) {
         }
 
         const tenantId = getAuthTenantId(freshUser);
-        if (tenantId) localStorage.setItem(TENANT_KEY, String(tenantId));
+        if (!tenantId) {
+          clearStoredSession();
+          setUser(null);
+          setToken(null);
+          setSubscription(null);
+          return;
+        }
 
+        localStorage.setItem(TENANT_KEY, String(tenantId));
         setUser(freshUser);
         setToken(savedToken);
         localStorage.setItem(USER_KEY, JSON.stringify(freshUser));

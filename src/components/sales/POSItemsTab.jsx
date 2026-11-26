@@ -8,6 +8,7 @@ import EmptyState from "../common/EmptyState";
 
 function POSItemsTab({
   mode,
+  barcodeFocusRequest = 0,
   searchTerm,
   setSearchTerm,
   setCurrentPage,
@@ -29,10 +30,21 @@ function POSItemsTab({
   const { formatCurrency } = useSettings();
   const [showCategoryFilters, setShowCategoryFilters] = useState(false);
 
-  // Auto-focus search bar (barcode scanners type instantly).
+  // Barcode scanners require a continuously usable search field.
   useEffect(() => {
-    if (searchInputRef.current) searchInputRef.current.focus();
-  }, [mode]);
+    const focusSearch = () => {
+      if (document.visibilityState === "hidden") return;
+      if (document.querySelector('[role="dialog"]')) return;
+      searchInputRef.current?.focus({ preventScroll: true });
+    };
+
+    const timer = window.setTimeout(focusSearch, 0);
+    window.addEventListener("focus", focusSearch);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("focus", focusSearch);
+    };
+  }, [mode, barcodeFocusRequest]);
 
   useEffect(() => {
     let filtered = localProducts;

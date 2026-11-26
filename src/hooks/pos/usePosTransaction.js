@@ -95,7 +95,7 @@ export function usePosTransaction({
         tax: Number(saleData.tax),
         total: totalNum,
         paidAmount: isCredit ? 0 : (Number(saleData.paidAmount) || totalNum),
-        remainingAmount: isCredit ? totalNum : (Number(saleData.remainingAmount) || 0),
+        remainingAmount: isCredit ? totalNum : 0,
         status: "Completed",
         paymentMethod: finalPaymentMethod,
         details: saleItems.map((i) => ({

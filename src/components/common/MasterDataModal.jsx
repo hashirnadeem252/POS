@@ -19,8 +19,8 @@ import "../../assets/styles/common/MasterDataModal.css";
  * @param {function} onClose - Callback when modal is closed
  * @param {function} onSave - Callback with form data when saved
  */
-function MasterDataModal({ type, onClose, onSave }) {
-  const [name, setName] = useState("");
+function MasterDataModal({ type, onClose, onSave, initialName = "" }) {
+  const [name, setName] = useState(initialName);
   const [shortName, setShortName] = useState("");
   const [loading, setLoading] = useState(false);
   const modalRef = useRef(null);
@@ -57,6 +57,10 @@ function MasterDataModal({ type, onClose, onSave }) {
 
   const config = getConfig();
   const { Icon } = config;
+
+  useEffect(() => {
+    setName(initialName);
+  }, [initialName, type]);
 
   // Auto-focus first input when modal opens
   useEffect(() => {

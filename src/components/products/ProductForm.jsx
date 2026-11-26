@@ -10,7 +10,7 @@ import FormTextarea from "../common/FormTextarea";
 import CodeInput from "../common/CodeInput";
 import "../../assets/styles/products/ProductForm.css";
 
-function ProductForm({ product, categories, brands, units, onClose, onSave }) {
+function ProductForm({ product, categories, brands, units, onClose, onSave, onAddCategory, onAddBrand, onAddUnit, masterSelection }) {
   // =========================
   // FORM STATE
   // =========================
@@ -61,6 +61,23 @@ function ProductForm({ product, categories, brands, units, onClose, onSave }) {
       resetForm();
     }
   }, [product]);
+
+  // =========================
+  // SELECT QUICK-ADDED MASTER DATA
+  // =========================
+  useEffect(() => {
+    if (!masterSelection?.id) return;
+
+    if (masterSelection.type === "category") {
+      setFormData((prev) => ({ ...prev, categoryId: Number(masterSelection.id) }));
+      setIsCodeManuallyEdited(false);
+      setIsCodeGenerated(false);
+    } else if (masterSelection.type === "brand") {
+      setFormData((prev) => ({ ...prev, brandId: Number(masterSelection.id) }));
+    } else if (masterSelection.type === "unit") {
+      setFormData((prev) => ({ ...prev, unitId: Number(masterSelection.id) }));
+    }
+  }, [masterSelection]);
 
   // =========================
   // AUTO-GENERATE ON CATEGORY CHANGE
@@ -340,6 +357,8 @@ if (openingStock > 0 && !formData.costPrice) {
             searchPlaceholder="Search categories..."
             required={!isEditing}
             disabled={isEditing}
+            onAdd={!isEditing ? onAddCategory : null}
+            addLabel="Add new category"
             helper={
               isEditing
                 ? "Category locked in edit mode"
@@ -357,6 +376,8 @@ if (openingStock > 0 && !formData.costPrice) {
             options={brandOptions}
             placeholder="Select brand"
             searchPlaceholder="Search brands..."
+            onAdd={onAddBrand}
+            addLabel="Add new brand"
           />
 
           <FormSelect
@@ -367,6 +388,8 @@ if (openingStock > 0 && !formData.costPrice) {
             options={unitOptions}
             placeholder="Select unit"
             searchPlaceholder="Search units..."
+            onAdd={onAddUnit}
+            addLabel="Add new unit"
           />
         </div>
 

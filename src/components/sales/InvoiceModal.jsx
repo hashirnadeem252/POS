@@ -42,8 +42,11 @@ const handleWhatsAppShare = () => {
     text += `--------------------------\n`;
     text += `*NET TOTAL: ${formatCurrency(saleData.total)}*\n`;
     if (saleData.paymentMethod === "Credit") {
+      const udhaarBalance = Math.max(0, Number(saleData.remainingAmount) || 0);
       text += `Paid: ${formatCurrency(saleData.paidAmount)}\n`;
-      text += `*Balance (Udhaar): ${formatCurrency(saleData.remainingAmount)}*\n`;
+      if (udhaarBalance > 0) {
+        text += `*Balance (Udhaar): ${formatCurrency(udhaarBalance)}*\n`;
+      }
     } else {
       text += `Paid via: ${saleData.paymentMethod}\n`;
     }
@@ -264,9 +267,9 @@ const handleWhatsAppShare = () => {
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span>{saleData.isReturn ? "Refunded / due:" : "Paid Amount:"}</span> <span>{formatCurrency(saleData.isReturn ? saleData.paidAmount || saleData.remainingAmount : saleData.paidAmount)}</span>
           </div>
-          {Number(saleData.remainingAmount) > 0 && (
+          {saleData.paymentMethod === "Credit" && Number(saleData.remainingAmount) > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", color: "#c00", fontWeight: "bold", fontSize: "12px", marginTop: "4px" }}>
-              <span>Balance (Udhaar):</span> <span>{formatCurrency(saleData.remainingAmount)}</span>
+              <span>Balance (Udhaar):</span> <span>{formatCurrency(Math.max(0, Number(saleData.remainingAmount)))}</span>
             </div>
           )}
         </div>

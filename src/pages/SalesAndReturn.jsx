@@ -92,11 +92,13 @@ function SalesAndReturn() {
   const [customerSearch, setCustomerSearch] = useState("");
   const [salesPersonSearch, setSalesPersonSearch] = useState("");
 
-  const [activeTab, setActiveTab] = useState("master");
+  const [activeTab, setActiveTab] = useState("items");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12);
   const [searchTerm, setSearchTerm] = useState("");
   const [quickAddType, setQuickAddType] = useState(null); // "customer" | "salesperson" | null
+
+ const [barcodeFocusRequest, setBarcodeFocusRequest] = useState(0);
 
  useEffect(() => {
   let isMounted = true;
@@ -204,6 +206,8 @@ function SalesAndReturn() {
     setIsManualReturn(false);
     setReturnLoaded(false);
     setMode("sale");
+    setActiveTab("items");
+    setBarcodeFocusRequest((request) => request + 1);
     setEditingReturnId(null);
 
     setSaleData({
@@ -661,6 +665,7 @@ function SalesAndReturn() {
             {activeTab === "items" && (
               <POSItemsTab
                 mode={mode}
+                barcodeFocusRequest={barcodeFocusRequest}
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
                 setCurrentPage={setCurrentPage}
