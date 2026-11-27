@@ -1,7 +1,10 @@
 // hooks/pos/usePosMasterData.js
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getProductsFromIndexedDB } from "../../services/indexdb/productService";
-import { getCustomersFromIndexedDB } from "../../services/indexdb/customerService";
+import {
+  getCustomersFromIndexedDB,
+  saveCustomersToIndexedDB,
+} from "../../services/indexdb/customerService";
 import { getSalesPersonsFromIndexedDB } from "../../services/indexdb/salesPersonService";
 import {
   PRODUCTS_UPDATED_EVENT,
@@ -48,16 +51,41 @@ export function usePosMasterData() {
   const withGlobalLoader = useGlobalLoader();
   const [loading, setLoading] = useState(true);
   const [customers, setCustomers] = useState([]);
+  const customersRef = useRef([]);
   const [salesPersons, setSalesPersons] = useState([]);
   const [products, setProducts] = useState([]);
   const [localProducts, setLocalProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const loadRequestId = useRef(0);
 
+  const updateCustomers = useCallback((records) => {
+    customersRef.current = records;
+    setCustomers(records);
+  }, []);
+
+  const upsertCustomer = useCallback((customer) => {
+    const currentCustomers = customersRef.current;
+    const updatedCustomers = [
+      ...currentCustomers.filter(
+        (existing) =>
+          customer.customerId == null ||
+          String(existing.customerId) !== String(customer.customerId)
+      ),
+      customer,
+    ];
+
+    updateCustomers(updatedCustomers);
+    if (tenantId) {
+      saveCustomersToIndexedDB(updatedCustomers, tenantId).catch((error) => {
+        console.error("[usePosMasterData] Error caching customer:", error);
+      });
+    }
+  }, [tenantId, updateCustomers]);
+
   const loadInitialData = useCallback(async () => {
     const requestId = ++loadRequestId.current;
     setLoading(true);
-    setCustomers([]);
+    updateCustomers([]);
     setSalesPersons([]);
     setProducts([]);
     setLocalProducts([]);
@@ -97,7 +125,7 @@ export function usePosMasterData() {
         return;
       }
       const sortedProducts = sortProducts(productsData || []);
-      setCustomers(customersData || []);
+      updateCustomers(customersData || []);
       setSalesPersons(personsData || []);
       setProducts(sortedProducts);
       setLocalProducts(sortedProducts);
@@ -109,7 +137,7 @@ export function usePosMasterData() {
     } finally {
       if (requestId === loadRequestId.current) setLoading(false);
     }
-  }, [tenantId]);
+  }, [tenantId, updateCustomers]);
 
   const refreshProducts = useCallback(
     () => refreshMasterData(tenantId),
@@ -143,7 +171,7 @@ export function usePosMasterData() {
       const { entity, records } = event.detail || {};
       if (!Array.isArray(records)) return;
 
-      if (entity === "customers") setCustomers(records);
+      if (entity === "customers") updateCustomers(records);
       if (entity === "salesPersons") setSalesPersons(records);
       if (entity === "products") {
         const sortedProducts = sortProducts(records);
@@ -162,11 +190,12 @@ export function usePosMasterData() {
         handleMasterDataUpdated
       );
     };
-  }, [tenantId]);
+  }, [tenantId, updateCustomers]);
 
   return {
     loading,
     customers,
+    upsertCustomer,
     salesPersons,
     products,
     localProducts,

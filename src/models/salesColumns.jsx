@@ -1,3 +1,5 @@
+import { formatPakistanDateTime } from "../utils/dateTime";
+
 function formatMoney(value) {
   const amount = Number(value);
   return `PKR ${(Number.isFinite(amount) ? amount : 0).toLocaleString("en-PK", {
@@ -25,11 +27,7 @@ export const salesBaseColumns = [
   {
     key: "saleDate",
     label: "Date & Time",
-    render: (row) => {
-      if (!row.saleDate) return "-";
-      const date = new Date(row.saleDate);
-      return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString();
-    }
+    render: (row) => row.saleDate ? formatPakistanDateTime(row.saleDate) : "-",
   },
   {
     key: "total",

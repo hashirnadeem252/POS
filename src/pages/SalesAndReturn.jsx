@@ -46,6 +46,7 @@ function SalesAndReturn() {
   // ═══════════════════════════════════════════════
   const {
     customers,
+    upsertCustomer,
     salesPersons,
     products,
     localProducts,
@@ -842,7 +843,10 @@ function SalesAndReturn() {
   type={quickAddType}
   onSuccess={(newRecord) => {
     // Automatically select the newly added customer/salesperson
-    if (quickAddType === "customer") selectCustomer(newRecord);
+    if (quickAddType === "customer") {
+      upsertCustomer(newRecord);
+      selectCustomer(newRecord);
+    }
     else selectSalesPerson(newRecord);
   }}
 />

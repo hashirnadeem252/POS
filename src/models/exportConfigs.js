@@ -1,4 +1,5 @@
 // models/exportConfigs.js
+import { formatPakistanDateTime } from "../utils/dateTime";
 
 export const productExportConfig = {
   title: '📦 Products List',
@@ -134,7 +135,7 @@ export const salesExportConfig = {
     s.invoiceNumber || "",
     s.customerName || "Walk-in",
     s.salesPersonName || "-",
-    s.saleDate ? new Date(s.saleDate).toLocaleString() : "",
+    s.saleDate ? formatPakistanDateTime(s.saleDate) : "",
     s.total || 0,
     s.status || "Draft",
     s.paymentMethod || "-",

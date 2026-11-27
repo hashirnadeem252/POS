@@ -1,7 +1,10 @@
 // components/sales/QuickAddModal.jsx
 import { useState } from "react";
 import { X, UserPlus, Save } from "lucide-react";
-import { createCustomer } from "../../services/CustomerDefinition/customerService";
+import {
+  createCustomer,
+  getCustomers,
+} from "../../services/CustomerDefinition/customerService";
 import { createSalesPerson } from "../../services/SalesPersonDefinition/salesPersonService";
 import { notify } from "../../utils/notify";
 
@@ -22,9 +25,49 @@ export default function QuickAddModal({ isOpen, onClose, type, onSuccess }) {
     try {
       let result;
       if (isCustomer) {
-        // Generate a simple code if not provided
-        const code = form.code || `C-${Date.now().toString().slice(-6)}`;
-        result = await createCustomer({ ...form, code, isActive: true, openingBalance: 0 });
+        const code = form.code.trim() || `C-${Date.now().toString().slice(-6)}`;
+        const customerData = {
+          ...form,
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          code,
+          isActive: true,
+          openingBalance: 0,
+        };
+        result = await createCustomer(customerData);
+
+        const customerId =
+          result?.customerId ??
+          result?.CustomerId ??
+          result?.id ??
+          result?.Id ??
+          (typeof result === "number" || typeof result === "string"
+            ? result
+            : null);
+
+        result = {
+          customerId,
+          code: result?.code ?? result?.Code ?? customerData.code,
+          name: result?.name ?? result?.Name ?? customerData.name,
+          phone: result?.phone ?? result?.Phone ?? customerData.phone,
+          email: result?.email ?? result?.Email ?? null,
+          address: result?.address ?? result?.Address ?? null,
+          city: result?.city ?? result?.City ?? null,
+          taxNumber: result?.taxNumber ?? result?.TaxNumber ?? null,
+          openingBalance:
+            result?.openingBalance ?? result?.OpeningBalance ?? 0,
+          isActive: result?.isActive ?? result?.IsActive ?? true,
+        };
+
+        if (result.customerId == null) {
+          const customers = await getCustomers();
+          result = customers.find(
+            (customer) => String(customer.code) === String(customerData.code)
+          );
+          if (!result) {
+            throw new Error("Customer was saved but could not be loaded.");
+          }
+        }
       } else {
         const code = form.code || `SP-${Date.now().toString().slice(-6)}`;
         result = await createSalesPerson({ ...form, code, isActive: true, commissionPercentage: 0 });

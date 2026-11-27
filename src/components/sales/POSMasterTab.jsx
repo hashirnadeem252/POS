@@ -3,6 +3,10 @@ import { useState } from "react";
 import { Search, X, Info, Calendar, Clock, Plus, Receipt } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import MonthlyStatementModal from "../customers/MonthlyStatementModal";
+import {
+  formatPakistanDate,
+  formatPakistanDateTime,
+} from "../../utils/dateTime";
 
 function POSMasterTab({
   salesPersonSearch,
@@ -178,14 +182,10 @@ function POSMasterTab({
           gap: "8px"
         }}>
           <Clock size={16} />
-          {new Date().toLocaleString(i18n.resolvedLanguage?.startsWith("ur") ? "ur-PK" : "en-PK", {
-            weekday: "short",
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
-          })}
+          {formatPakistanDateTime(
+            new Date(),
+            i18n.resolvedLanguage?.startsWith("ur") ? "ur-PK" : "en-PK"
+          )}
         </div>
       </div>
 
@@ -197,7 +197,7 @@ function POSMasterTab({
             <span>Original Sale: {foundSale.invoiceNumber}</span>
           </div>
           <div className="found-sale-details">
-            <span>Date: {new Date(foundSale.saleDate).toLocaleDateString()}</span>
+            <span>Date: {formatPakistanDate(foundSale.saleDate, i18n.resolvedLanguage?.startsWith("ur") ? "ur-PK" : "en-PK")}</span>
             <span>Total: PKR {foundSale.total.toFixed(2)}</span>
           </div>
         </div>

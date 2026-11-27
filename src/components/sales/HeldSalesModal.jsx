@@ -4,6 +4,7 @@ import { X, Play, Trash2, Clock } from "lucide-react";
 import { getHeldSales, deleteSale } from "../../services/SaleDefinition/saleService";
 import { notify } from "../../utils/notify";
 import EmptyState from "../common/EmptyState";
+import { formatPakistanTime } from "../../utils/dateTime";
 
 export default function HeldSalesModal({ isOpen, onClose, onResumeSale }) {
   const [heldSales, setHeldSales] = useState([]);
@@ -76,7 +77,7 @@ export default function HeldSalesModal({ isOpen, onClose, onResumeSale }) {
                   <div>
                     <div style={{ fontWeight: "bold", color: "#12203A", fontSize: "15px" }}>{sale.invoiceNumber}</div>
                     <div style={{ fontSize: "12px", color: "#6B7A8F", marginTop: "4px" }}>
-                      {sale.customerName || "Walk-in"} • {new Date(sale.saleDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {sale.customerName || "Walk-in"} • {formatPakistanTime(sale.saleDate)}
                     </div>
                   </div>
                   

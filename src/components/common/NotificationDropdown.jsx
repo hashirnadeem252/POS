@@ -21,6 +21,7 @@ import { getProductsFromIndexedDB } from "../../services/indexdb/productService"
 import { PRODUCTS_UPDATED_EVENT } from "../../services/ProductDefinition/productService";
 import { MASTER_DATA_UPDATED_EVENT } from "../../services/masterDataSyncService";
 import { getCurrentAuthTenantId } from "../../utils/authTenant";
+import { getPakistanDateString } from "../../utils/dateTime";
 import EmptyState from "./EmptyState";
 import "../../assets/styles/common/NotificationDropdown.css";
 
@@ -90,12 +91,12 @@ function NotificationDropdown() {
         (customer) => Number(customer.currentBalance) > 0
       );
 
-      const todayStr = new Date().toDateString();
+      const todayStr = getPakistanDateString(new Date());
 
       const todaysTotal = allSales
         .filter(
           (sale) =>
-            new Date(sale.saleDate).toDateString() === todayStr &&
+            getPakistanDateString(sale.saleDate) === todayStr &&
             sale.status?.toLowerCase() === "completed"
         )
         .reduce((sum, sale) => sum + Number(sale.total), 0);

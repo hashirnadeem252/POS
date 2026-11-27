@@ -21,24 +21,28 @@ import { useTranslation } from "react-i18next";
 import { useSettings } from "../contexts/SettingsContext";
 import DataLoader from "../components/common/DataLoader"; // ✅ Imported your existing loader
 import { requireCurrentAuthTenantId } from "../utils/authTenant"; // ✅ Needed for IndexedDB
+import {
+  formatPakistanDateTime,
+  getPakistanDateString,
+} from "../utils/dateTime";
 import "../assets/styles/Dashboard.css";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement, PointElement, LineElement, Filler);
 
-function getLocalDateString(date) {
-  const value = new Date(date);
-  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
-}
-
 function getLast7DaysSales(sales) {
   const days = [];
+  const [year, month, day] = getPakistanDateString(new Date())
+    .split("-")
+    .map(Number);
+  const today = new Date(Date.UTC(year, month - 1, day));
+
   for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dateString = getLocalDateString(date);
+    const date = new Date(today);
+    date.setUTCDate(date.getUTCDate() - i);
+    const dateString = date.toISOString().slice(0, 10);
     const daySales = sales.filter(
       (sale) =>
-        getLocalDateString(sale.saleDate) === dateString &&
+        getPakistanDateString(sale.saleDate) === dateString &&
         sale.status?.toLowerCase() === "completed"
     );
     days.push({
@@ -145,13 +149,13 @@ function Dashboard() {
 
         const salesList = sales || [];
         const productList = products || [];
-        const today = getLocalDateString(new Date());
+        const today = getPakistanDateString(new Date());
         
         const todaySales = salesList.filter(
-          (sale) => getLocalDateString(sale.saleDate) === today && sale.status?.toLowerCase() === "completed"
+          (sale) => getPakistanDateString(sale.saleDate) === today && sale.status?.toLowerCase() === "completed"
         );
         const todayPurchases = (purchases || []).filter(
-          (purchase) => getLocalDateString(purchase.purchaseDate) === today
+          (purchase) => getPakistanDateString(purchase.purchaseDate) === today
         );
         const lowStock = productList.filter(
           (product) => product.currentStock <= product.minimumStock && product.currentStock > 0
@@ -199,7 +203,8 @@ function Dashboard() {
    }, [activeTenantId]);
 
   const locale = i18n.resolvedLanguage?.startsWith("ur") ? "ur-PK" : "en-PK";
-  const formatDate = (dateString) => dateString ? new Date(dateString).toLocaleDateString(locale, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
+  const formatDate = (dateString) =>
+    dateString ? formatPakistanDateTime(dateString, locale) : "-";
 
   const CHART_COLORS = {
     primary: "#0D9488", primaryDark: "#0F766E", teal2: "#14B8A6", teal3: "#5EEAD4", teal4: "#0F766E", teal5: "#115E59", teal6: "#99F6E4",
@@ -208,7 +213,12 @@ function Dashboard() {
   const fontFamily = "Inter, sans-serif";
 
   const barChartData = {
-    labels: dailySales.map((day) => new Date(`${day.date}T12:00:00`).toLocaleDateString(locale, { weekday: "short" })),
+    labels: dailySales.map((day) =>
+      new Intl.DateTimeFormat(locale, {
+        timeZone: "Asia/Karachi",
+        weekday: "short",
+      }).format(new Date(`${day.date}T12:00:00Z`))
+    ),
     datasets: [{ label: t("dashboard.sales"), data: dailySales.map((d) => d.total), backgroundColor: CHART_COLORS.primary, borderRadius: 6, maxBarThickness: 34 }],
   };
   const barChartOptions = {

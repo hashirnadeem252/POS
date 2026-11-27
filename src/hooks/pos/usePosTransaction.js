@@ -88,6 +88,7 @@ export function usePosTransaction({
 
       const saleToSave = {
         ...saleData,
+        saleDate: isEditing ? saleData.saleDate : new Date().toISOString(),
         customerId: saleData.customerId ? Number(saleData.customerId) : null,
         salesPersonId: saleData.salesPersonId ? Number(saleData.salesPersonId) : null,
         subTotal: Number(saleData.subTotal),

@@ -30,6 +30,10 @@ import {
   salesExtraColumns,
 } from "../../models/salesColumns.jsx";
 import { getSalesSearchFields } from "../../models/salesSearchFields.js";
+import {
+  formatPakistanDateTime,
+  getPakistanDateString,
+} from "../../utils/dateTime";
 import { notify } from "../../utils/notify";
 import "../../assets/styles/sales/SalesSearch.css";
 
@@ -46,19 +50,11 @@ function formatMoney(value) {
 }
 
 function formatDateTime(value) {
-  if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString();
+  return formatPakistanDateTime(value);
 }
 
 function formatLocalDate(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return getPakistanDateString(value);
 }
 
 function mergeSaleDetails(sale, response) {

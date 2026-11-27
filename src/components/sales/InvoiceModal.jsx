@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import { notify } from "../../utils/notify";
 import { useSettings } from "../../contexts/SettingsContext";
+import { formatPakistanDateTime } from "../../utils/dateTime";
 import { Printer, X, MessageCircle, Download } from "lucide-react";
 import html2pdf from "html2pdf.js";
 
@@ -14,11 +15,7 @@ function InvoiceModal({ isOpen, onClose, saleData }) {
   if (!isOpen || !saleData) return null;
 
   const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleString("en-PK", {
-      year: "numeric", month: "short", day: "numeric",
-      hour: "2-digit", minute: "2-digit"
-    });
+    return dateString ? formatPakistanDateTime(dateString) : "-";
   };
 
 const handleWhatsAppShare = () => {
